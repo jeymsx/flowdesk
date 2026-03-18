@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.2);
+  border-radius: 3px;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(34, 197, 94, 0.15) !important;
+  border: 2px dashed rgba(34, 197, 94, 0.3) !important;
+  border-radius: 0.75rem;
+  opacity: 1 !important;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  border-color: rgba(128, 128, 128, 0.2) !important;
+}
+
+.react-grid-item > .react-resizable-handle:hover::after {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+}
+
+@keyframes barBounce {
+  from { transform: scaleY(0.4); }
+  to   { transform: scaleY(1); }
+}
+
+/* bg-accent-500/8 custom opacity since Tailwind doesn't generate it */
+.bg-accent-500\/8 {
+  background-color: rgb(34 197 94 / 0.08);
+}
