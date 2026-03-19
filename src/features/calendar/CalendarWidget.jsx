@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
+import { useTagsStore } from '../../store/tagsStore';
 import ConfirmModal from '../../components/ConfirmModal';
+import TagSelector from '../../components/TagSelector';
 
 // Sunday first
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -61,8 +63,11 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
   const [description, setDescription] = useState('');
   const [endDate, setEndDate] = useState('');
   const [color, setColor] = useState(EVENT_COLORS[0]);
+  const [addTags, setAddTags] = useState([]);
   const [saving, setSaving] = useState(false);
   const [confirmEvt, setConfirmEvt] = useState(null);
+  const userId = useAuthStore((s) => s.user?.id);
+  const { tags, addTag } = useTagsStore();
 
   // Position: prefer below the cell, flip above if too close to bottom
   const estimatedH = 320 + dayEvents.length * 28;
@@ -91,11 +96,12 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await onAdd(title.trim(), toDateStr(date), endDate || null, color, description.trim());
+      await onAdd(title.trim(), toDateStr(date), endDate || null, color, description.trim(), addTags);
       setTitle('');
       setDescription('');
       setEndDate('');
       setColor(EVENT_COLORS[0]);
+      setAddTags([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -185,6 +191,12 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
               placeholder="Description (optional)…"
               rows={2}
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+            />
+            <TagSelector
+              selected={addTags}
+              onChange={setAddTags}
+              tags={tags}
+              onCreateTag={(name) => addTag(userId, name)}
             />
             <div>
               <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
@@ -296,8 +308,11 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
   const [addDesc, setAddDesc] = useState('');
   const [addEndDate, setAddEndDate] = useState('');
   const [addColor, setAddColor] = useState(EVENT_COLORS[0]);
+  const [addTags, setAddTags] = useState([]);
   const [adding, setAdding] = useState(false);
   const titleInputRef = useRef(null);
+  const userId = useAuthStore((s) => s.user?.id);
+  const { tags, addTag } = useTagsStore();
 
   // Edit state
   const [editingId, setEditingId] = useState(null);
@@ -306,6 +321,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
   const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editColor, setEditColor] = useState(EVENT_COLORS[0]);
+  const [editTags, setEditTags] = useState([]);
   const [editSaving, setEditSaving] = useState(false);
 
   // Delete confirm state
@@ -318,6 +334,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
     setEditStartDate(evt.start_date || '');
     setEditEndDate(evt.end_date || '');
     setEditColor(evt.color || EVENT_COLORS[0]);
+    setEditTags(evt.tags || []);
   };
 
   const cancelEdit = () => setEditingId(null);
@@ -332,6 +349,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
         start_date: editStartDate || evt.start_date,
         end_date: editEndDate && editEndDate >= (editStartDate || evt.start_date) ? editEndDate : null,
         color: editColor,
+        tags: editTags,
       });
       setEditingId(null);
     } catch (err) {
@@ -365,10 +383,11 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
     if (!addTitle.trim()) return;
     setAdding(true);
     try {
-      await onAddEvent(addTitle.trim(), selectedDateStr, addEndDate || null, addColor, addDesc.trim());
+      await onAddEvent(addTitle.trim(), selectedDateStr, addEndDate || null, addColor, addDesc.trim(), addTags);
       setAddTitle('');
       setAddDesc('');
       setAddEndDate('');
+      setAddTags([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -514,6 +533,12 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
               rows={2}
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
             />
+            <TagSelector
+              selected={addTags}
+              onChange={setAddTags}
+              tags={tags}
+              onCreateTag={(name) => addTag(userId, name)}
+            />
             <div>
               <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
               <input
@@ -569,6 +594,12 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                         placeholder="Description…"
                         rows={2}
                         className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+                      />
+                      <TagSelector
+                        selected={editTags}
+                        onChange={setEditTags}
+                        tags={tags}
+                        onCreateTag={(name) => addTag(userId, name)}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -676,6 +707,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
 export default function CalendarWidget() {
   const userId = useAuthStore((s) => s.user?.id);
   const { events: allEvents, loading, load, addEvent, updateEvent: storeUpdate, deleteEvent: storeDelete } = useEventsStore();
+  const { load: loadTags } = useTagsStore();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -684,6 +716,7 @@ export default function CalendarWidget() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => { load(userId); }, [userId, load]);
+  useEffect(() => { if (userId) loadTags(userId); }, [userId, loadTags]);
 
   // Filter store events to the current month view
   const monthStart = toDateStr(new Date(year, month, 1));
@@ -696,8 +729,8 @@ export default function CalendarWidget() {
   const weeks = getMonthGrid(year, month);
   const monthLabel = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  const handleAddEvent = (title, startDate, endDate, color, description) =>
-    addEvent(userId, title, startDate, endDate, color, description);
+  const handleAddEvent = (title, startDate, endDate, color, description, tags = []) =>
+    addEvent(userId, title, startDate, endDate, color, description, tags);
 
   const handleUpdateEvent = (id, updates) => storeUpdate(id, updates);
 

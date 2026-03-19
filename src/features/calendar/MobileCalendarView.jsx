@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
+import { useTagsStore } from '../../store/tagsStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import BottomSheet from '../../layout/BottomSheet';
+import TagSelector from '../../components/TagSelector';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const EVENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -56,6 +58,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
   const [desc, setDesc] = useState('');
   const [endDate, setEndDate] = useState('');
   const [color, setColor] = useState(EVENT_COLORS[0]);
+  const [addTags, setAddTags] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -63,8 +66,11 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
   const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editColor, setEditColor] = useState(EVENT_COLORS[0]);
+  const [editTags, setEditTags] = useState([]);
   const [editSaving, setEditSaving] = useState(false);
   const [confirmEvt, setConfirmEvt] = useState(null);
+  const userId = useAuthStore((s) => s.user?.id);
+  const { tags, addTag } = useTagsStore();
 
   const dateStr = selectedDate ? toDateStr(selectedDate) : '';
   const dayEvents = selectedDate ? getEventsForDay(selectedDate, events) : [];
@@ -74,11 +80,12 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await onAdd(title.trim(), dateStr, endDate || null, color, desc.trim());
+      await onAdd(title.trim(), dateStr, endDate || null, color, desc.trim(), addTags);
       setTitle('');
       setDesc('');
       setEndDate('');
       setColor(EVENT_COLORS[0]);
+      setAddTags([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,6 +103,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
         start_date: editStartDate || evt.start_date,
         end_date: editEndDate && editEndDate >= (editStartDate || evt.start_date) ? editEndDate : null,
         color: editColor,
+        tags: editTags,
       });
       setEditingId(null);
     } catch (err) {
@@ -112,6 +120,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
     setEditStartDate(evt.start_date || '');
     setEditEndDate(evt.end_date || '');
     setEditColor(evt.color || EVENT_COLORS[0]);
+    setEditTags(evt.tags || []);
   };
 
   const dateLabel = selectedDate
@@ -152,6 +161,12 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
               placeholder="Description (optional)…"
               rows={2}
               className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+            />
+            <TagSelector
+              selected={addTags}
+              onChange={setAddTags}
+              tags={tags}
+              onCreateTag={(name) => addTag(userId, name)}
             />
             <div>
               <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
@@ -207,6 +222,12 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
                         placeholder="Description…"
                         rows={2}
                         className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+                      />
+                      <TagSelector
+                        selected={editTags}
+                        onChange={setEditTags}
+                        tags={tags}
+                        onCreateTag={(name) => addTag(userId, name)}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -308,6 +329,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
 export default function MobileCalendarView() {
   const userId = useAuthStore((s) => s.user?.id);
   const { events: allEvents, loading, load, addEvent, updateEvent, deleteEvent } = useEventsStore();
+  const { load: loadTags } = useTagsStore();
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -315,6 +337,7 @@ export default function MobileCalendarView() {
   const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => { load(userId); }, [userId, load]);
+  useEffect(() => { if (userId) loadTags(userId); }, [userId, loadTags]);
 
   const monthStart = toDateStr(new Date(year, month, 1));
   const monthEnd = toDateStr(new Date(year, month + 1, 0));
@@ -331,8 +354,8 @@ export default function MobileCalendarView() {
   const nextMonth = () => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); };
   const goToday = () => { setYear(today.getFullYear()); setMonth(today.getMonth()); };
 
-  const handleAdd = (title, startDate, endDate, color, description) =>
-    addEvent(userId, title, startDate, endDate, color, description);
+  const handleAdd = (title, startDate, endDate, color, description, tags = []) =>
+    addEvent(userId, title, startDate, endDate, color, description, tags);
 
   const handleUpdate = (id, updates) => updateEvent(id, updates);
 

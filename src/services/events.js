@@ -29,7 +29,7 @@ export async function fetchEventsForMonth(userId, year, month) {
   });
 }
 
-export async function createEvent(userId, title, startDate, endDate = null, color = '#22c55e', description = '') {
+export async function createEvent(userId, title, startDate, endDate = null, color = '#22c55e', description = '', tags = []) {
   const { data, error } = await supabase
     .from('events')
     .insert({
@@ -39,6 +39,7 @@ export async function createEvent(userId, title, startDate, endDate = null, colo
       end_date: endDate || null,
       color,
       description: description || null,
+      tags: tags ?? [],
     })
     .select()
     .single();

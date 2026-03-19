@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
@@ -6,8 +6,10 @@ import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useEventsStore } from '../store/eventsStore';
+import { useTagsStore } from '../store/tagsStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import ConfirmModal from '../components/ConfirmModal';
+import TagSelector from '../components/TagSelector';
 
 const EVENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -78,6 +80,7 @@ export default function Sidebar() {
 
   const events = useEventsStore((s) => s.events);
   const addEvent = useEventsStore((s) => s.addEvent);
+  const { tags, addTag, load: loadTags } = useTagsStore();
 
   const [widgetsOpen, setWidgetsOpen] = useState(true);
   const [layoutsOpen, setLayoutsOpen] = useState(true);
@@ -93,9 +96,12 @@ export default function Sidebar() {
   const [quickDesc, setQuickDesc] = useState('');
   const [quickEndDate, setQuickEndDate] = useState('');
   const [quickColor, setQuickColor] = useState(EVENT_COLORS[0]);
+  const [quickTags, setQuickTags] = useState([]);
   const [quickLoading, setQuickLoading] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const saveInputRef = useRef(null);
   const addTaskBtnRef = useRef(null);
+  const whatsNewBtnRef = useRef(null);
 
   const today = toDateStr(new Date());
   const todayEvents = events.filter((e) => {
@@ -106,12 +112,15 @@ export default function Sidebar() {
   const todayTotal = todayEvents.length;
   const streak = computeStreak(events);
 
+  useEffect(() => { if (user?.id) loadTags(user.id); }, [user?.id, loadTags]);
+
   const closeQuickAdd = () => {
     setShowQuickAdd(false);
     setQuickTitle('');
     setQuickDesc('');
     setQuickEndDate('');
     setQuickColor(EVENT_COLORS[0]);
+    setQuickTags([]);
   };
 
   const handleQuickAdd = async (e) => {
@@ -120,7 +129,7 @@ export default function Sidebar() {
     if (!title || !user?.id) return;
     setQuickLoading(true);
     try {
-      await addEvent(user.id, title, today, quickEndDate || today, quickColor, quickDesc.trim());
+      await addEvent(user.id, title, today, quickEndDate || today, quickColor, quickDesc.trim(), quickTags);
       closeQuickAdd();
     } catch (err) {
       console.error(err);
@@ -487,6 +496,92 @@ export default function Sidebar() {
           </div>
         )}
 
+        {/* What's New */}
+        <div className="mt-1 border-t border-gray-100 dark:border-gray-800 pt-2">
+          <button
+            ref={whatsNewBtnRef}
+            onClick={() => setShowWhatsNew(true)}
+            title={!sidebarOpen ? "What's new" : undefined}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            {sidebarOpen && (
+              <span className="flex items-center gap-2 flex-1">
+                What&apos;s new
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-accent-500 text-white leading-none">v1.0</span>
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* What's New Popover */}
+        {showWhatsNew && createPortal(
+          <div className="fixed inset-0 z-[9990]" onClick={() => setShowWhatsNew(false)}>
+            <div
+              className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
+              style={{
+                left: sidebarOpen ? 248 : 68,
+                top: Math.min(
+                  whatsNewBtnRef.current ? whatsNewBtnRef.current.getBoundingClientRect().top - 8 : 300,
+                  window.innerHeight - 480
+                ),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">What&apos;s New</h4>
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-500/10 text-accent-600 dark:text-accent-400">v1.0.0</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">March 19, 2026 · Initial launch</p>
+                  </div>
+                  <button
+                    onClick={() => setShowWhatsNew(false)}
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                  {[
+                    'Tag system — build a library, select when adding tasks',
+                    'Edit task in a popover anchored to the row',
+                    'Tag management panel at the bottom of Tasks widget',
+                    'Bookmark widget with folders, favorites, and date grouping',
+                    'Sidebar quick-add task with tags, color, and end date',
+                    'Quick stats strip — streak and today\'s task count',
+                    'Milestones and Music widgets now use popovers',
+                    'Terms, Privacy, and Changelog pages',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <svg className="w-3 h-3 mt-0.5 shrink-0 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    onClick={() => { setShowWhatsNew(false); navigate('/changelog'); }}
+                    className="text-xs font-medium text-accent-500 hover:text-accent-600 transition-colors"
+                  >
+                    View full changelog →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
         {/* Quick-Add Task */}
         <div className={`${sidebarOpen && (streak > 0 || todayTotal > 0) ? 'mt-2' : 'mt-1'} border-t border-gray-100 dark:border-gray-800 pt-2`}>
           <button
@@ -546,6 +641,12 @@ export default function Sidebar() {
                     placeholder="Description (optional)…"
                     rows={2}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+                  />
+                  <TagSelector
+                    selected={quickTags}
+                    onChange={setQuickTags}
+                    tags={tags}
+                    onCreateTag={(name) => addTag(user.id, name)}
                   />
                   <div>
                     <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>

@@ -8,6 +8,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
+import ChangelogPage from './components/ChangelogPage';
 import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/app" element={<AppShell />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/changelog" element={<ChangelogPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

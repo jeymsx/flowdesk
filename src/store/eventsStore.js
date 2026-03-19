@@ -19,8 +19,8 @@ export const useEventsStore = create((set, get) => ({
     }
   },
 
-  addEvent: async (userId, title, startDate, endDate, color, description) => {
-    const evt = await createEvent(userId, title, startDate, endDate, color, description);
+  addEvent: async (userId, title, startDate, endDate, color, description, tags = []) => {
+    const evt = await createEvent(userId, title, startDate, endDate, color, description, tags);
     set((s) => ({
       events: [...s.events, evt].sort((a, b) => a.start_date.localeCompare(b.start_date)),
     }));
