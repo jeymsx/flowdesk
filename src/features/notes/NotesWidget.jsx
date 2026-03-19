@@ -95,7 +95,7 @@ export default function NotesWidget() {
     if (t === note.title && c === note.content && JSON.stringify(tg) === JSON.stringify(note.tags)) return;
     setSaving(true);
     try {
-      const updated = await updateNote(note.id, { title: t, content: c, tags: tg });
+      const updated = await updateNote(note.id, { title: t, content: c, tags: tg }, userId);
       setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
       setActiveNote(updated);
       // Show "Saved" indicator briefly
