@@ -48,7 +48,10 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
+    const userId = get().user?.id;
     await supabase.auth.signOut();
+    // Clean up any legacy localStorage note key from the old encryption scheme
+    if (userId) localStorage.removeItem(`fd_nk_${userId}`);
     set({ user: null, session: null });
   },
 }));

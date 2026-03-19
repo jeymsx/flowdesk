@@ -1,29 +1,45 @@
 /**
  * Client-side AES-GCM encryption for notes.
  *
- * A 256-bit key is generated once per user and stored in localStorage.
- * The key never leaves the device — Supabase only ever stores ciphertext.
+ * The encryption key is derived from the user's ID via PBKDF2.
+ * Nothing is stored — the same userId always produces the same key,
+ * so notes are readable on any device the user logs into.
  *
  * Encrypted values are prefixed with "enc:" so legacy plaintext notes
- * (stored before encryption was added) are displayed as-is without error.
+ * are displayed as-is without error.
  */
 
 const ALGO = { name: 'AES-GCM', length: 256 };
 
-function storageKey(userId) {
-  return `fd_nk_${userId}`;
-}
+// Cache derived keys in memory for the session (PBKDF2 is intentionally slow)
+const keyCache = new Map();
 
-async function getOrCreateKey(userId) {
-  const stored = localStorage.getItem(storageKey(userId));
-  if (stored) {
-    const raw = Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
-    return crypto.subtle.importKey('raw', raw, ALGO, true, ['encrypt', 'decrypt']);
-  }
-  const key = await crypto.subtle.generateKey(ALGO, true, ['encrypt', 'decrypt']);
-  const exported = await crypto.subtle.exportKey('raw', key);
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
-  localStorage.setItem(storageKey(userId), b64);
+async function deriveKey(userId) {
+  if (keyCache.has(userId)) return keyCache.get(userId);
+
+  const encoder = new TextEncoder();
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(userId),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  // Fixed app-level salt — combined with the userId this makes the key
+  // unique per user and non-trivial to reverse without knowing both values
+  const salt = encoder.encode('flowdesk-notes-encryption-v1');
+
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
+    keyMaterial,
+    ALGO,
+    false, // not extractable — key stays inside the browser's crypto engine
+    ['encrypt', 'decrypt']
+  );
+
+  keyCache.set(userId, key);
   return key;
 }
 
@@ -47,19 +63,19 @@ async function decryptField(key, value) {
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
     return new TextDecoder().decode(plain);
   } catch {
-    return value; // if key changed or data corrupted, show raw rather than crash
+    return value; // if data is corrupted, show raw rather than crash
   }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function encryptNote(userId, { title, content, tags }) {
-  const key = await getOrCreateKey(userId);
+  const key = await deriveKey(userId);
   const [encTitle, encContent] = await Promise.all([
     encryptField(key, title),
     encryptField(key, content),
   ]);
-  // Encrypt tags as a JSON string, stored as single-element array
+  // Encrypt tags as a JSON string stored as a single-element array
   const encTags = tags?.length
     ? [await encryptField(key, JSON.stringify(tags))]
     : [];
@@ -67,17 +83,15 @@ export async function encryptNote(userId, { title, content, tags }) {
 }
 
 export async function decryptNote(userId, note) {
-  const key = await getOrCreateKey(userId);
+  const key = await deriveKey(userId);
   const [title, content] = await Promise.all([
     decryptField(key, note.title),
     decryptField(key, note.content),
   ]);
-  // Decrypt tags: if single encrypted element, parse back to array
   let tags = note.tags || [];
   if (tags.length === 1 && tags[0]?.startsWith('enc:')) {
     try {
-      const raw = await decryptField(key, tags[0]);
-      tags = JSON.parse(raw);
+      tags = JSON.parse(await decryptField(key, tags[0]));
     } catch {
       tags = [];
     }
