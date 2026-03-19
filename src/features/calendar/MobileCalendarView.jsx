@@ -60,6 +60,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editColor, setEditColor] = useState(EVENT_COLORS[0]);
   const [editSaving, setEditSaving] = useState(false);
@@ -92,7 +93,8 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
       await onUpdate(evt.id, {
         title: editTitle.trim(),
         description: editDesc.trim() || null,
-        end_date: editEndDate || null,
+        start_date: editStartDate || evt.start_date,
+        end_date: editEndDate && editEndDate >= (editStartDate || evt.start_date) ? editEndDate : null,
         color: editColor,
       });
       setEditingId(null);
@@ -107,6 +109,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
     setEditingId(evt.id);
     setEditTitle(evt.title);
     setEditDesc(evt.description || '');
+    setEditStartDate(evt.start_date || '');
     setEditEndDate(evt.end_date || '');
     setEditColor(evt.color || EVENT_COLORS[0]);
   };
@@ -205,6 +208,30 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
                         rows={2}
                         className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
                       />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide">Start date</label>
+                          <input
+                            type="date"
+                            value={editStartDate}
+                            onChange={(e) => {
+                              setEditStartDate(e.target.value);
+                              if (editEndDate && editEndDate < e.target.value) setEditEndDate('');
+                            }}
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide">End date</label>
+                          <input
+                            type="date"
+                            value={editEndDate}
+                            min={editStartDate || evt.start_date}
+                            onChange={(e) => setEditEndDate(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                          />
+                        </div>
+                      </div>
                       <div className="flex gap-1.5">
                         {EVENT_COLORS.map((c) => (
                           <button
