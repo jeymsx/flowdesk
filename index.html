@@ -2,20 +2,27 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- viewport-fit=cover extends layout into iOS safe areas -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Theme color: JS will override once app loads, these cover initial paint -->
+
+    <!-- Initial theme colors before JS loads (JS in App.jsx overrides on toggle) -->
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
-    <!-- iOS PWA -->
+
+    <!-- iOS standalone PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- black-translucent = transparent status bar, app content extends behind it -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FlowDesk" />
+
     <!-- Android PWA -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Icons (VitePWA injects <link rel="manifest"> automatically) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
     <title>FlowDesk</title>
   </head>
   <body>
