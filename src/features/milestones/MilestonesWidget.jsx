@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useMilestonesStore } from '../../store/milestonesStore';
 import { useWidgetStore } from '../../store/widgetStore';
@@ -74,8 +75,8 @@ function MilestoneCard({ m, isNearest, onEdit, onDelete }) {
     }`}>
       {/* Top row: title + menu */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-bold tracking-wide text-gray-400 dark:text-gray-500 uppercase truncate">
-          #{m.title.replace(/\s+/g, '').toUpperCase()}
+        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 truncate">
+          {m.title}
         </span>
         <div ref={menuRef} className="relative shrink-0">
           <button
@@ -208,6 +209,7 @@ export default function MilestonesWidget() {
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const addBtnRef = useRef(null);
   const [editSaving, setEditSaving] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
 
@@ -289,64 +291,82 @@ export default function MilestonesWidget() {
           Milestones
         </h3>
         <button
+          ref={addBtnRef}
           onClick={() => { setShowForm((v) => !v); setEditingId(null); }}
-          className={`p-1.5 rounded-lg transition-colors ${
-            showForm
-              ? 'bg-accent-500/10 text-accent-500'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white'
-          }`}
-          title={showForm ? 'Cancel' : 'Add milestone'}
+          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+          title="Add milestone"
         >
-          <svg className={`w-4 h-4 transition-transform duration-200 ${showForm ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
       </div>
 
-      {/* Add form */}
-      {showForm && (
-        <div className="px-2 pb-2 shrink-0">
-          <form onSubmit={handleAdd} className="px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-2">
-            <input
-              autoFocus
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Milestone title…"
-              className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
-            />
-            <input
-              type="date"
-              value={date}
-              min={today}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
-            />
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optional)…"
-              className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setTitle(''); setDate(''); setDescription(''); }}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving || !title.trim() || !date}
-                className="px-3 py-1.5 text-xs font-bold bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white rounded-lg transition-colors"
-              >
-                {saving ? '…' : 'Add'}
-              </button>
+      {/* Add popover */}
+      {showForm && createPortal(
+        <div className="fixed inset-0 z-[9990]" onClick={() => { setShowForm(false); setTitle(''); setDate(''); setDescription(''); }}>
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
+            style={(() => {
+              const r = addBtnRef.current?.getBoundingClientRect();
+              if (!r) return { left: 100, top: 100 };
+              return {
+                left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)),
+                top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 320)),
+              };
+            })()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Milestone</h4>
+                <button
+                  onClick={() => { setShowForm(false); setTitle(''); setDate(''); setDescription(''); }}
+                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleAdd} className="space-y-2.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && setShowForm(false)}
+                  placeholder="Milestone title…"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+                <input
+                  type="date"
+                  value={date}
+                  min={today}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                />
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && setShowForm(false)}
+                  placeholder="Description (optional)…"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+                <button
+                  type="submit"
+                  disabled={saving || !title.trim() || !date}
+                  className="w-full py-2 text-sm font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white rounded-xl transition-colors"
+                >
+                  {saving ? 'Saving…' : 'Add Milestone'}
+                </button>
+              </form>
             </div>
-          </form>
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* List */}

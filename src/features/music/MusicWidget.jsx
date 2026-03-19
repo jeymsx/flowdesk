@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 // Regular uploaded videos (not live streams) — swap IDs with any YouTube video ID you prefer
 const STATIONS = [
@@ -24,6 +25,7 @@ export default function MusicWidget() {
   const [customUrl, setCustomUrl] = useState('');
   const [customId, setCustomId] = useState(null);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const linkBtnRef = useRef(null);
 
   const isCustom = customId !== null && stationIdx === -1;
   const station = isCustom ? { id: customId, title: 'Custom', emoji: '🔗' } : STATIONS[stationIdx];
@@ -78,6 +80,7 @@ export default function MusicWidget() {
             ))}
           </select>
           <button
+            ref={linkBtnRef}
             onClick={() => setShowCustomInput((v) => !v)}
             title="Play custom YouTube URL"
             className={`p-1 rounded-lg transition-colors ${showCustomInput ? 'bg-accent-500/15 text-accent-500' : 'text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
@@ -89,25 +92,56 @@ export default function MusicWidget() {
         </div>
       </div>
 
-      {/* Custom URL input */}
-      {showCustomInput && (
-        <form onSubmit={handleCustomSubmit} className="flex gap-1.5 shrink-0">
-          <input
-            autoFocus
-            type="text"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            placeholder="Paste YouTube URL…"
-            className="flex-1 px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          />
-          <button
-            type="submit"
-            disabled={!customUrl.trim()}
-            className="px-2.5 py-1.5 text-xs font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white rounded-lg transition-colors"
+      {/* Custom URL popover */}
+      {showCustomInput && createPortal(
+        <div className="fixed inset-0 z-[9990]" onClick={() => { setShowCustomInput(false); setCustomUrl(''); }}>
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
+            style={(() => {
+              const r = linkBtnRef.current?.getBoundingClientRect();
+              if (!r) return { left: 100, top: 100 };
+              return {
+                left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)),
+                top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 180)),
+              };
+            })()}
+            onClick={(e) => e.stopPropagation()}
           >
-            Play
-          </button>
-        </form>
+            <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Custom YouTube URL</h4>
+                <button
+                  onClick={() => { setShowCustomInput(false); setCustomUrl(''); }}
+                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleCustomSubmit} className="space-y-2.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && setShowCustomInput(false)}
+                  placeholder="Paste YouTube URL…"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+                <button
+                  type="submit"
+                  disabled={!customUrl.trim()}
+                  className="w-full py-2 text-sm font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white rounded-xl transition-colors"
+                >
+                  Play
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* YouTube embed — fills available space */}
