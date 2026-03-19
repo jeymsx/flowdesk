@@ -6,6 +6,8 @@ import { useProfileStore } from './store/profileStore';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Signup from './components/Signup';
+import TermsPage from './components/TermsPage';
+import PrivacyPage from './components/PrivacyPage';
 import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
@@ -66,6 +68,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/app" element={<AppShell />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

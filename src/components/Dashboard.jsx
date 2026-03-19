@@ -13,6 +13,7 @@ import TasksWidget from '../features/tasks/TasksWidget';
 import ClockWidget from '../features/clock/ClockWidget';
 import StreakWidget from '../features/streak/StreakWidget';
 import MilestonesWidget from '../features/milestones/MilestonesWidget';
+import BookmarksWidget from '../features/bookmarks/BookmarksWidget';
 import { SkeletonBlock } from './Skeleton';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -28,6 +29,7 @@ const WIDGET_COMPONENTS = {
   clock: ClockWidget,
   streak: StreakWidget,
   milestones: MilestonesWidget,
+  bookmarks: BookmarksWidget,
 };
 
 function DashboardSkeleton() {

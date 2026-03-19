@@ -10,6 +10,7 @@ export const ALL_WIDGETS = [
   { id: 'clock-1', type: 'clock', label: 'Clock' },
   { id: 'streak-1', type: 'streak', label: 'Consistency' },
   { id: 'milestones-1', type: 'milestones', label: 'Milestones' },
+  { id: 'bookmarks-1', type: 'bookmarks', label: 'Bookmarks' },
 ];
 
 export const DEFAULT_VISIBLE = ['calendar-1', 'notes-1', 'focus-1', 'music-1', 'tasks-1', 'clock-1', 'streak-1', 'milestones-1'];
@@ -24,6 +25,7 @@ export const DEFAULT_LAYOUTS = {
     { i: 'clock-1', x: 0, y: 8, w: 2, h: 5, minW: 2, minH: 3 },
     { i: 'streak-1', x: 2, y: 8, w: 4, h: 5, minW: 3, minH: 4 },
     { i: 'milestones-1', x: 6, y: 11, w: 3, h: 4, minW: 3, minH: 4 },
+    { i: 'bookmarks-1', x: 9, y: 11, w: 3, h: 7, minW: 3, minH: 5 },
   ],
   md: [
     { i: 'calendar-1', x: 0, y: 0, w: 6, h: 8, minW: 3, minH: 6 },
@@ -34,6 +36,7 @@ export const DEFAULT_LAYOUTS = {
     { i: 'clock-1', x: 0, y: 14, w: 3, h: 5, minW: 2, minH: 3 },
     { i: 'streak-1', x: 3, y: 14, w: 4, h: 5, minW: 3, minH: 4 },
     { i: 'milestones-1', x: 7, y: 14, w: 3, h: 4, minW: 3, minH: 4 },
+    { i: 'bookmarks-1', x: 0, y: 18, w: 5, h: 7, minW: 3, minH: 5 },
   ],
   sm: [
     { i: 'calendar-1', x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
@@ -44,6 +47,7 @@ export const DEFAULT_LAYOUTS = {
     { i: 'clock-1', x: 0, y: 30, w: 4, h: 5, minW: 2, minH: 3 },
     { i: 'streak-1', x: 0, y: 35, w: 6, h: 5, minW: 3, minH: 4 },
     { i: 'milestones-1', x: 0, y: 40, w: 6, h: 4, minW: 3, minH: 4 },
+    { i: 'bookmarks-1', x: 0, y: 44, w: 6, h: 7, minW: 3, minH: 5 },
   ],
   xs: [
     { i: 'calendar-1', x: 0, y: 0, w: 4, h: 8, minW: 3, minH: 6 },
@@ -54,6 +58,7 @@ export const DEFAULT_LAYOUTS = {
     { i: 'clock-1', x: 0, y: 30, w: 4, h: 5, minW: 2, minH: 3 },
     { i: 'streak-1', x: 0, y: 35, w: 4, h: 5, minW: 3, minH: 4 },
     { i: 'milestones-1', x: 0, y: 40, w: 4, h: 4, minW: 3, minH: 4 },
+    { i: 'bookmarks-1', x: 0, y: 44, w: 4, h: 7, minW: 3, minH: 5 },
   ],
 };
 

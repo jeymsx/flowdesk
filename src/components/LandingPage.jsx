@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-4 pb-12">
       <div className="max-w-2xl text-center space-y-8">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-500/10 border border-accent-500/20">
@@ -56,6 +56,11 @@ export default function LandingPage() {
           </span>
         </div>
       </div>
+      <footer className="mt-16 flex items-center justify-center gap-6 text-xs text-gray-600">
+        <Link to="/terms" className="hover:text-gray-400 transition-colors">Terms &amp; Conditions</Link>
+        <span className="text-gray-700">·</span>
+        <Link to="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</Link>
+      </footer>
     </div>
   );
 }

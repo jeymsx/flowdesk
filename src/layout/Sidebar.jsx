@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
@@ -36,6 +37,7 @@ const WIDGET_ICONS = {
   clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
   streak: 'M13 10V3L4 14h7v7l9-11h-7z',
   milestones: 'M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2',
+  bookmarks: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z',
 };
 
 function Icon({ d, size = 5 }) {
@@ -69,6 +71,7 @@ export default function Sidebar() {
   const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const navigate = useNavigate();
   const { profile } = useProfileStore();
   const { allWidgets, visibleWidgetIds, toggleWidget, resetLayout, savedLayouts, activeSavedLayoutId, saveCurrentLayout, applySavedLayout, renameSavedLayout, deleteSavedLayout } = useWidgetStore();
   const { canInstall, install } = usePWAInstall();
@@ -142,7 +145,12 @@ export default function Sidebar() {
       {/* Logo + Collapse toggle */}
       <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-gray-200 dark:border-gray-800">
         {sidebarOpen && (
-          <span className="text-base font-bold text-accent-500 tracking-tight">FlowDesk</span>
+          <button
+            onClick={() => navigate('/')}
+            className="text-base font-bold text-accent-500 tracking-tight hover:text-accent-400 transition-colors"
+          >
+            FlowDesk
+          </button>
         )}
         <div className="flex items-center gap-1 ml-auto">
           {sidebarOpen && (
