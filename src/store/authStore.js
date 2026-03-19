@@ -29,6 +29,10 @@ export const useAuthStore = create((set, get) => ({
   signUp: async (email, password) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    // When email confirmation is disabled in Supabase, a session is returned immediately
+    if (data.session) {
+      set({ session: data.session, user: data.user });
+    }
     return data;
   },
 
