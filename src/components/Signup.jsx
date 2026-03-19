@@ -2,10 +2,40 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
+function EyeIcon({ open }) {
+  return open ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    </svg>
+  );
+}
+
+function getStrength(pw) {
+  const checks = {
+    length: pw.length >= 8,
+    lower: /[a-z]/.test(pw),
+    upper: /[A-Z]/.test(pw),
+    digit: /[0-9]/.test(pw),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  return { checks, score };
+}
+
+const STRENGTH_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+const STRENGTH_COLOR = ['', 'bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-accent-500'];
+const STRENGTH_TEXT  = ['', 'text-red-500', 'text-orange-400', 'text-yellow-500', 'text-accent-500'];
+
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -13,11 +43,19 @@ export default function Signup() {
   const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const navigate = useNavigate();
 
+  const { checks, score } = getStrength(password);
+  const passwordsMatch = confirm.length > 0 && password === confirm;
+  const passwordsMismatch = confirm.length > 0 && password !== confirm;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (password !== confirm) {
       setError('Passwords do not match.');
+      return;
+    }
+    if (score < 4) {
+      setError('Password must contain uppercase, lowercase, and a number.');
       return;
     }
     setLoading(true);
@@ -69,35 +107,99 @@ export default function Signup() {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
-              placeholder="Min 6 characters"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2.5 pr-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
+                placeholder="Min 8 characters"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <EyeIcon open={showPassword} />
+              </button>
+            </div>
+
+            {/* Strength bar */}
+            {password.length > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? STRENGTH_COLOR[score] : 'bg-gray-200 dark:bg-gray-700'}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-3">
+                    {[
+                      { key: 'lower', label: 'a–z' },
+                      { key: 'upper', label: 'A–Z' },
+                      { key: 'digit', label: '0–9' },
+                      { key: 'length', label: '8+ chars' },
+                    ].map(({ key, label }) => (
+                      <span
+                        key={key}
+                        className={`text-[10px] font-medium transition-colors ${checks[key] ? 'text-accent-500' : 'text-gray-400 dark:text-gray-600'}`}
+                      >
+                        {checks[key] ? '✓' : '·'} {label}
+                      </span>
+                    ))}
+                  </div>
+                  <span className={`text-[10px] font-semibold ${STRENGTH_TEXT[score]}`}>
+                    {STRENGTH_LABEL[score]}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Confirm password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm password</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                className={`w-full px-3 py-2.5 pr-10 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                  passwordsMismatch
+                    ? 'border-red-400 focus:ring-red-400'
+                    : passwordsMatch
+                      ? 'border-accent-400 focus:ring-accent-500'
+                      : 'border-gray-300 dark:border-gray-700 focus:ring-accent-500'
+                }`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <EyeIcon open={showConfirm} />
+              </button>
+            </div>
+            {passwordsMismatch && (
+              <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+            )}
+            {passwordsMatch && (
+              <p className="mt-1 text-xs text-accent-500">✓ Passwords match</p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || score < 4 || passwordsMismatch || !confirm}
             className="w-full py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
           >
             {loading ? 'Creating account...' : 'Create Account'}
