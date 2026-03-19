@@ -18,17 +18,18 @@ export default function AppLayout({ children }) {
   if (isMobile) {
     return (
       <div
-        className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+        className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden"
         style={{
-          minHeight: '100dvh',
+          height: '100dvh',
           paddingTop: 'env(safe-area-inset-top)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         {/* Main content area — padding-bottom keeps content above floating nav */}
         <main
-          className="overflow-y-auto"
-          style={{
+          className={mobileTab === 'calendar' ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}
+          style={mobileTab === 'calendar' ? {
+            height: 'calc(100dvh - env(safe-area-inset-top) - 64px - env(safe-area-inset-bottom))',
+          } : {
             height: 'calc(100dvh - env(safe-area-inset-top))',
             paddingBottom: 'calc(88px + env(safe-area-inset-bottom))',
           }}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
 import { useTagsStore } from '../../store/tagsStore';
+import { useUIStore } from '../../store/uiStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import TagSelector from '../../components/TagSelector';
 
@@ -708,6 +709,7 @@ export default function CalendarWidget() {
   const userId = useAuthStore((s) => s.user?.id);
   const { events: allEvents, loading, load, addEvent, updateEvent: storeUpdate, deleteEvent: storeDelete } = useEventsStore();
   const { load: loadTags } = useTagsStore();
+  const setMobileTab = useUIStore((s) => s.setMobileTab);
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -802,7 +804,14 @@ export default function CalendarWidget() {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); setIsFullscreen(true); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.innerWidth <= 768) {
+                  setMobileTab('calendar');
+                } else {
+                  setIsFullscreen(true);
+                }
+              }}
               className="p-1 ml-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
               title="Expand calendar"
             >

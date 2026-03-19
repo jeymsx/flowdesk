@@ -5,10 +5,10 @@
 /* Fill iOS safe-area insets (status bar + home indicator) with the app bg color.
    These mirror the dark/light values used in App.jsx and AppLayout. */
 html {
-  background-color: #0f172a;
-}
-html:not(.dark) {
   background-color: #f9fafb;
+}
+html.dark {
+  background-color: #0f172a;
 }
 body {
   background-color: inherit;

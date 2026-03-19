@@ -17,12 +17,35 @@ import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
 import UsernameModal from './components/UsernameModal';
 
+function applyDarkMode(darkMode) {
+  document.documentElement.classList.toggle('dark', darkMode);
+  const themeColor = darkMode ? '#0f172a' : '#f9fafb';
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+    el.setAttribute('content', themeColor);
+  });
+  document.documentElement.style.backgroundColor = themeColor;
+}
+
+function removeDarkMode() {
+  document.documentElement.classList.remove('dark');
+  document.documentElement.style.backgroundColor = '#f9fafb';
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+    el.setAttribute('content', '#f9fafb');
+  });
+}
+
 function DemoShell() {
-  const { enterDemo, exitDemo } = useUIStore();
+  const { enterDemo, exitDemo, darkMode } = useUIStore();
+
   useEffect(() => {
     enterDemo();
     return () => exitDemo();
   }, [enterDemo, exitDemo]);
+
+  useEffect(() => {
+    applyDarkMode(darkMode);
+    return () => removeDarkMode();
+  }, [darkMode]);
 
   return (
     <AppLayout>
@@ -34,8 +57,13 @@ function DemoShell() {
 function AppShell() {
   const user = useAuthStore((s) => s.user);
   const { fetchProfile, profile } = useProfileStore();
-  const { showUsernameModal, setShowUsernameModal } = useUIStore();
+  const { showUsernameModal, setShowUsernameModal, darkMode } = useUIStore();
   const { load: loadGamification, reset: resetGamification } = useGamificationStore();
+
+  useEffect(() => {
+    applyDarkMode(darkMode);
+    return () => removeDarkMode();
+  }, [darkMode]);
 
   useEffect(() => {
     if (user) {
@@ -69,21 +97,10 @@ function AppShell() {
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
-  const darkMode = useUIStore((s) => s.darkMode);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    const themeColor = darkMode ? '#0f172a' : '#f9fafb';
-    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
-      el.setAttribute('content', themeColor);
-    });
-    // Also update body/html bg so safe-area insets show the right color
-    document.documentElement.style.backgroundColor = themeColor;
-  }, [darkMode]);
 
   return (
     <BrowserRouter>

@@ -13,6 +13,7 @@ const WIDGET_ICONS = {
   clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
   streak: 'M13 10V3L4 14h7v7l9-11h-7z',
   milestones: 'M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2',
+  bookmarks: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z',
 };
 
 export default function MobileWidgetsSheet() {

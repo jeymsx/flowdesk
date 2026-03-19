@@ -3,9 +3,31 @@ import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { useWidgetStore } from '../store/widgetStore';
+import { useEventsStore } from '../store/eventsStore';
+import { useGamificationStore, computeLevel, getLevelTitle } from '../store/gamificationStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import BottomSheet from './BottomSheet';
 import ConfirmModal from '../components/ConfirmModal';
+import DailyChallenges from '../components/gamification/DailyChallenges';
+import WeeklyRecapModal from '../components/gamification/WeeklyRecapModal';
+import LeaderboardModal from '../components/LeaderboardModal';
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function shiftDate(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return toDateStr(d);
+}
+function computeStreak(events) {
+  const completedDates = new Set(events.filter((e) => e.completed).map((e) => e.start_date));
+  const today = toDateStr(new Date());
+  let streak = 0;
+  let d = completedDates.has(today) ? today : shiftDate(today, -1);
+  while (completedDates.has(d)) { streak++; d = shiftDate(d, -1); }
+  return streak;
+}
 
 export default function MobileProfileSheet() {
   const { showMobileProfile, setShowMobileProfile, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal } = useUIStore();
@@ -20,6 +42,21 @@ export default function MobileProfileSheet() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [savingName, setSavingName] = useState('');
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  const { xp, loaded: gamLoaded } = useGamificationStore();
+  const { level, xpInLevel, xpToNext } = computeLevel(xp);
+  const levelTitle = getLevelTitle(level);
+  const events = useEventsStore((s) => s.events);
+  const streak = computeStreak(events);
+  const today = toDateStr(new Date());
+  const todayEvents = events.filter((e) => {
+    const end = e.end_date || e.start_date;
+    return e.start_date <= today && end >= today;
+  });
+  const todayDone = todayEvents.filter((e) => e.completed).length;
+  const todayTotal = todayEvents.length;
 
   const displayName = profile?.username || user?.email?.split('@')[0] || 'User';
   const initial = displayName[0]?.toUpperCase() ?? '?';
@@ -63,6 +100,78 @@ export default function MobileProfileSheet() {
             </svg>
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Change username</span>
           </button>
+
+          {/* Divider */}
+          <div className="pt-1 pb-1 border-t border-gray-100 dark:border-gray-800 mx-2" />
+
+          {/* Progress / Gamification */}
+          {gamLoaded && (
+            <div className="px-1">
+              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Progress</p>
+
+              {/* XP bar */}
+              <button
+                onClick={() => setShowWeeklyRecap(true)}
+                className="w-full px-3 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group text-left"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">Level {level}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{levelTitle}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-accent-500">{xp} XP</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-500 transition-all duration-500"
+                    style={{ width: `${(xpInLevel / xpToNext) * 100}%`, boxShadow: '0 0 6px rgba(34,197,94,0.5)' }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View weekly recap →</p>
+              </button>
+
+              {/* Streak + tasks */}
+              {(streak > 0 || todayTotal > 0) && (
+                <div className="px-3 py-1 flex gap-4">
+                  {streak > 0 && (
+                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                      <svg className="w-4 h-4 text-accent-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{streak}d streak</span>
+                    </div>
+                  )}
+                  {todayTotal > 0 && (
+                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                      <svg className="w-4 h-4 text-accent-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{todayDone}/{todayTotal} tasks</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Daily Challenges */}
+              <div className="px-3 py-2">
+                <DailyChallenges collapsed={false} />
+              </div>
+
+              {/* Leaderboard button */}
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Leaderboard</span>
+              </button>
+            </div>
+          )}
 
           {/* Divider */}
           <div className="pt-1 pb-1 border-t border-gray-100 dark:border-gray-800 mx-2" />
@@ -266,6 +375,8 @@ export default function MobileProfileSheet() {
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}
+      {showWeeklyRecap && <WeeklyRecapModal onClose={() => setShowWeeklyRecap(false)} />}
+      {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
     </>
   );
 }
