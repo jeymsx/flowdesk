@@ -13,7 +13,7 @@ export const ALL_WIDGETS = [
   { id: 'bookmarks-1', type: 'bookmarks', label: 'Bookmarks' },
 ];
 
-export const DEFAULT_VISIBLE = ['calendar-1', 'notes-1', 'focus-1', 'music-1', 'tasks-1', 'clock-1', 'streak-1', 'milestones-1'];
+export const DEFAULT_VISIBLE = ['calendar-1', 'notes-1', 'focus-1', 'music-1', 'tasks-1', 'clock-1', 'streak-1', 'milestones-1', 'bookmarks-1'];
 
 export const DEFAULT_LAYOUTS = {
   lg: [
@@ -109,6 +109,8 @@ export const useWidgetStore = create((set, get) => ({
   _userId: null,
 
   loadLayout: async (userId) => {
+    // Reset first so stale data from a previous session is never shown
+    set({ initialized: false });
     try {
       const saved = await fetchLayout(userId);
       if (saved) {
@@ -183,6 +185,10 @@ export const useWidgetStore = create((set, get) => ({
   resetLayout: () => {
     set({ layouts: DEFAULT_LAYOUTS, visibleWidgetIds: DEFAULT_VISIBLE, activeSavedLayoutId: null });
     persistLayout(get);
+  },
+
+  setDemoLayout: () => {
+    set({ layouts: DEFAULT_LAYOUTS, visibleWidgetIds: DEFAULT_VISIBLE, initialized: true, activeSavedLayoutId: null });
   },
 
   setWidgetHeight: (id, h) => {

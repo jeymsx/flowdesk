@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent } from '../services/events';
+import { useGamificationStore } from './gamificationStore';
 
 export const useEventsStore = create((set, get) => ({
   events: [],
@@ -48,6 +49,11 @@ export const useEventsStore = create((set, get) => ({
     set((s) => ({
       events: s.events.map((e) => (e.id === id ? { ...e, completed: next } : e)),
     }));
+    // Award XP when marking as done
+    if (next) {
+      const { awardXP, loaded } = useGamificationStore.getState();
+      if (loaded) awardXP(10, 'Task complete');
+    }
     try {
       await updateEvent(id, { completed: next });
     } catch (err) {

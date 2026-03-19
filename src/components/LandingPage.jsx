@@ -1,8 +1,9 @@
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { motion } from 'framer-motion';
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 
 const FEATURES = [
   {
@@ -47,6 +48,29 @@ const FEATURES = [
   },
 ];
 
+const GAMIFICATION_FEATURES = [
+  {
+    icon: '⚡',
+    title: 'XP & Levels',
+    description: 'Earn XP for every task you complete, every focus session you finish, and every streak milestone you hit. Level up and unlock new titles as you build better habits.',
+  },
+  {
+    icon: '🎯',
+    title: 'Daily Challenges',
+    description: 'Three fresh challenges every day — complete a certain number of tasks, run a focus session, or keep your streak alive. Bonus XP for each one you knock out.',
+  },
+  {
+    icon: '🔥',
+    title: 'Streak Milestones',
+    description: 'Keep your streak going for 7, 30, or 100 consecutive days to unlock milestone badges and earn bonus XP. An at-risk warning appears if you haven\'t completed anything yet today.',
+  },
+  {
+    icon: '🏆',
+    title: 'Leaderboard',
+    description: 'See how you stack up against other FlowDesk users. Rankings are based on total XP earned — climb the board by staying consistent and completing challenges.',
+  },
+];
+
 const PRINCIPLES = [
   {
     title: 'Your layout, your rules',
@@ -76,6 +100,47 @@ const staggerContainer = {
   }
 };
 
+// Feature card with cursor glow
+function FeatureCard({ f, variants }) {
+  const cardRef = useRef(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
+
+  const handleMouseMove = (e) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      variants={variants}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:border-accent-200 hover:shadow-md hover:-translate-y-0.5 transition-all group flex flex-col gap-4 overflow-hidden"
+    >
+      {/* Cursor glow */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+        style={{
+          opacity: hovered ? 1 : 0,
+          background: `radial-gradient(220px circle at ${pos.x}px ${pos.y}px, rgba(34,197,94,0.10), transparent 70%)`,
+        }}
+      />
+      <div className="w-8 h-8 rounded text-gray-400 group-hover:text-accent-500 transition-colors flex items-center justify-center shrink-0">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
+        </svg>
+      </div>
+      <div>
+        <h3 className="text-base font-medium text-gray-900 mb-2">{f.title}</h3>
+        <p className="text-sm text-gray-500 font-light leading-relaxed">{f.description}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 // Unified Logo Component
 const LogoIcon = ({ className }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -91,7 +156,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-accent-100 selection:text-accent-900 antialiased">
       
       {/* ── Nav ── */}
-      <header className="border-b border-gray-100/50 sticky top-0 bg-white/80 backdrop-blur-md z-50">
+      <header className="border-b border-gray-100/50 sticky top-0 bg-white/80 backdrop-blur-md z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
             <div className="w-8 h-8 bg-accent-500 rounded-md flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
@@ -110,7 +175,7 @@ export default function LandingPage() {
             {user ? (
               <button
                 onClick={() => navigate('/app')}
-                className="ml-2 px-5 py-2 text-sm font-medium text-white bg-accent-500 hover:bg-accent-600 rounded-lg transition-all"
+                className="ml-2 px-5 py-2 text-sm font-medium text-white bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 rounded-lg shadow-sm transition-all"
               >
                 Open dashboard
               </button>
@@ -124,7 +189,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-5 py-2 text-sm font-medium text-white bg-accent-500 hover:bg-accent-600 rounded-lg shadow-sm hover:shadow transition-all"
+                  className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 rounded-lg shadow-sm hover:shadow transition-all"
                 >
                   Get started
                 </Link>
@@ -136,8 +201,10 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative flex-1 flex flex-col items-center justify-center pt-28 pb-16 px-6 overflow-hidden">
-        {/* Very subtle background blur to add depth without overpowering */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gray-50/50 blur-[100px] rounded-full pointer-events-none" />
+        {/* Background orbs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-accent-100/40 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-20 left-1/4 w-[300px] h-[300px] bg-blue-100/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute top-10 right-1/4 w-[250px] h-[250px] bg-purple-100/20 blur-[80px] rounded-full pointer-events-none" />
         
         <motion.div 
           className="max-w-3xl mx-auto text-center relative z-10"
@@ -151,18 +218,33 @@ export default function LandingPage() {
           </motion.div>
           
           <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl md:text-7xl font-light text-gray-900 leading-[1.15] tracking-tight mb-6 text-balance">
-            Everything you need to <span className="text-accent-500 font-medium">stay on top</span> of your day.
+            One system for <span className="text-accent-500 font-medium">everything</span> you need to get things done.
           </motion.h1>
-          
-          <motion.p variants={fadeUp} className="text-lg text-gray-500 font-light leading-relaxed mb-10 max-w-2xl mx-auto text-balance">
-            FlowDesk brings your tasks, calendar, notes, focus timer, and more into one flexible workspace. Arrange the widgets however you want. 
+
+          <motion.p variants={fadeUp} className="text-lg text-gray-500 font-light leading-relaxed mb-8 max-w-2xl mx-auto text-balance">
+            Replace your scattered tabs and tools with a single, customizable workspace. Tasks, calendar, notes, timer, bookmarks — all connected, all in one place.
           </motion.p>
-          
+
+          <motion.div variants={fadeUp} className="flex flex-col items-center gap-2 mb-10">
+            {[
+              'Fully customizable layout',
+              'Everything in one workspace',
+              'Built-in focus and motivation system',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-gray-500 font-light">
+                <svg className="w-4 h-4 text-accent-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                {item}
+              </div>
+            ))}
+          </motion.div>
+
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {user ? (
               <button
                 onClick={() => navigate('/app')}
-                className="w-full sm:w-auto px-8 py-3 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:-translate-y-0.5 transition-all"
+                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
                 Go to your dashboard &rarr;
               </button>
@@ -170,15 +252,15 @@ export default function LandingPage() {
               <>
                 <button
                   onClick={() => navigate('/signup')}
-                  className="w-full sm:w-auto px-8 py-3 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:-translate-y-0.5 transition-all"
+                  className="w-full sm:w-auto px-8 py-3 bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
                 >
-                  Create a free account
+                  Get started for free
                 </button>
                 <button
-                  onClick={() => navigate('/login')}
-                  className="w-full sm:w-auto px-8 py-3 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 text-sm font-medium rounded-lg transition-all"
+                  onClick={() => navigate('/demo')}
+                  className="w-full sm:w-auto px-8 py-3 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 text-sm font-medium rounded-lg transition-all hover:-translate-y-0.5"
                 >
-                  View demo
+                  Try it out
                 </button>
               </>
             )}
@@ -186,36 +268,86 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Hero Dashboard Mockup - With Real App Image */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
           className="mt-24 max-w-5xl w-full mx-auto relative z-10"
         >
-          <div className="rounded-xl border border-gray-200/60 bg-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] overflow-hidden">
+          {/* Glow behind the mockup */}
+          <div className="absolute -inset-x-8 -top-8 -bottom-4 bg-gradient-to-b from-accent-200/50 via-accent-100/30 to-transparent blur-2xl rounded-3xl pointer-events-none" />
+          <div className="absolute -inset-x-16 -top-12 h-40 bg-gradient-to-r from-blue-200/20 via-accent-200/30 to-purple-200/20 blur-3xl rounded-full pointer-events-none" />
+
+          <div className="relative rounded-2xl border border-gray-200/80 bg-white shadow-[0_32px_80px_-12px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] overflow-hidden">
             {/* Mac-style Window Header */}
-            <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-2">
+            <div className="bg-gray-50/80 border-b border-gray-100 px-4 py-3 flex items-center gap-2">
               <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />
-                <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />
-                <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                <div className="w-2.5 h-2.5 rounded-full bg-red-300/70" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-300/70" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-300/70" />
               </div>
             </div>
-            
+
             {/* The Image Viewer */}
-            <div className="bg-gray-50 relative overflow-hidden border-t border-gray-100/50">
-               <img 
-                 src="/anchor.png" 
-                 alt="FlowDesk Dashboard Preview" 
-                 className="w-full h-auto block shadow-sm"
-               />
+            <div className="bg-gray-50 relative overflow-hidden border-t border-gray-100/50 select-none">
+              <img
+                src="/anchor.png"
+                alt="FlowDesk Dashboard Preview"
+                className="w-full h-auto block pointer-events-none"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              {/* Transparent overlay to block right-click / drag-save */}
+              <div className="absolute inset-0" onContextMenu={(e) => e.preventDefault()} />
             </div>
           </div>
         </motion.div>
       </section>
 
+      {/* ── How it works ── */}
+      <section className="py-24 px-6 border-t border-gray-100 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={fadeUp}
+            className="mb-14 text-center"
+          >
+            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">How it works</h2>
+            <p className="text-gray-500 font-light max-w-xl mx-auto">Set up your workspace in minutes and build a daily routine that actually sticks.</p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-10"
+          >
+            {[
+              { step: '1', title: 'Add your tasks, notes, and goals', description: 'Drop in your tasks, jot down notes, and set milestones — everything you need to track in one place.' },
+              { step: '2', title: 'Arrange your workspace your way', description: 'Drag and resize widgets until the layout fits how you think. Save multiple layouts and switch instantly.' },
+              { step: '3', title: 'Stay consistent with focus and streaks', description: 'Use the focus timer to work in sessions, earn XP, and keep your daily streak alive with challenges.' },
+            ].map((item) => (
+              <motion.div key={item.step} variants={fadeUp} className="flex flex-col items-center text-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-accent-50 border border-accent-100 flex items-center justify-center text-accent-600 text-sm font-medium shrink-0">
+                  {item.step}
+                </div>
+                <div>
+                  <h3 className="text-base font-medium text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-gray-500 font-light leading-relaxed">{item.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* ── Features ── */}
-      <section className="py-24 px-6 border-t border-gray-100 bg-gray-50/30">
+      <section className="py-24 px-6 border-t border-gray-100 bg-gray-50/30 relative overflow-hidden">
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #374151 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="max-w-6xl mx-auto">
           <motion.div 
             initial="hidden"
@@ -224,8 +356,8 @@ export default function LandingPage() {
             variants={fadeUp}
             className="mb-16 md:text-center"
           >
-            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">Everything in its right place.</h2>
-            <p className="text-gray-500 font-light max-w-2xl mx-auto">Eight purposeful widgets designed to work together, so you can stop switching tabs and start focusing.</p>
+            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">Every part of your system, in one place.</h2>
+            <p className="text-gray-500 font-light max-w-2xl mx-auto">Eight purposeful widgets built to work together as a single system — not a collection of disconnected tools.</p>
           </motion.div>
           
           <motion.div 
@@ -236,16 +368,44 @@ export default function LandingPage() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {FEATURES.map((f) => (
+              <FeatureCard key={f.title} f={f} variants={fadeUp} />
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Gamification ── */}
+      <section className="py-24 px-6 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={fadeUp}
+            className="mb-16 md:text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gray-200 text-gray-500 text-xs font-medium uppercase tracking-widest mb-6 bg-white shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+              Stay motivated
+            </div>
+            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">Built to keep you coming back.</h2>
+            <p className="text-gray-500 font-light max-w-2xl mx-auto">FlowDesk rewards consistency. Earn XP, complete daily challenges, hit streak milestones, and see how you compare with others.</p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {GAMIFICATION_FEATURES.map((f) => (
               <motion.div
                 key={f.title}
                 variants={fadeUp}
-                className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:border-accent-200 hover:shadow transition-all group flex flex-col gap-4"
+                className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:border-yellow-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-4"
               >
-                <div className="w-8 h-8 rounded text-gray-400 group-hover:text-accent-500 transition-colors flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
-                  </svg>
-                </div>
+                <span className="text-2xl leading-none">{f.icon}</span>
                 <div>
                   <h3 className="text-base font-medium text-gray-900 mb-2">{f.title}</h3>
                   <p className="text-sm text-gray-500 font-light leading-relaxed">{f.description}</p>
@@ -305,16 +465,17 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
             className="max-w-2xl mx-auto text-center relative z-10"
           >
-            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">Ready to get organised?</h2>
+            <h2 className="text-3xl font-light text-gray-900 mb-4 tracking-tight">Start building your system today</h2>
             <p className="text-gray-500 font-light mb-10">
-              Join thousands of people bringing clarity to their workday. Free to use. No credit card required.
+              Your layout. Your widgets. Your workflow. Free to use — no credit card required.
             </p>
             <button
               onClick={() => navigate('/signup')}
-              className="px-8 py-3 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:-translate-y-0.5 transition-all"
+              className="px-8 py-3 bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
-              Create your free account
+              Get started for free
             </button>
+            <p className="mt-4 text-xs text-gray-400 font-light">No setup. No complexity. Just start.</p>
           </motion.div>
         </section>
       )}
@@ -332,11 +493,14 @@ export default function LandingPage() {
               {VERSION}
             </Link>
           </div>
-          <nav className="flex items-center gap-8 text-xs text-gray-400">
-            <Link to="/changelog" className="hover:text-gray-900 transition-colors">Changelog</Link>
-            <Link to="/terms" className="hover:text-gray-900 transition-colors">Terms</Link>
-            <Link to="/privacy" className="hover:text-gray-900 transition-colors">Privacy</Link>
-          </nav>
+          <div className="flex flex-col items-center md:items-end gap-2">
+            <nav className="flex items-center gap-8 text-xs text-gray-400">
+              <Link to="/changelog" className="hover:text-gray-900 transition-colors">Changelog</Link>
+              <Link to="/terms" className="hover:text-gray-900 transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-gray-900 transition-colors">Privacy</Link>
+            </nav>
+            <span className="text-xs text-gray-300">Made by James with love ❤️</span>
+          </div>
         </div>
       </footer>
     </div>

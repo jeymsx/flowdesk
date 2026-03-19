@@ -1,125 +1,76 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const RELEASES = [
+  {
+    version: '1.1.0',
+    label: 'Gamification Update',
+    date: 'March 20, 2026',
+    description: 'FlowDesk now rewards consistency — earn XP, level up, hit streak milestones, and compete on the leaderboard.',
+    sections: [
+      {
+        title: 'Gamification',
+        color: 'yellow',
+        items: [
+          'XP & Levels — earn XP for completing tasks, finishing focus sessions, and hitting streak milestones. Level up with titles from Newcomer to Legend',
+          'Daily Challenges — 3 rotating goals every day with bonus XP on completion',
+          'Streak milestones at 7, 30, and 100 days — unlock badges and one-time bonus XP',
+          'Global leaderboard — see how you rank against other users',
+          'Weekly Recap — level progress, 7-day activity, and challenge summary',
+        ],
+      },
+      {
+        title: 'New Features',
+        color: 'blue',
+        items: [
+          'Demo mode — try the full dashboard without signing up',
+          'Focus Timer pop-out — detach a draggable mini-timer that stays visible anywhere',
+          'Send Feedback — submit bug reports or suggestions directly from the sidebar',
+        ],
+      },
+      {
+        title: 'Polish',
+        color: 'gray',
+        items: [
+          'Sidebar reorganised — pinned Add Task button, grouped bottom actions, progress card',
+          'Landing page refreshed — new hero copy, "How it works" section, feature card glow effects',
+          'Edit task popover redesigned with more room and a cleaner layout',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.0',
     label: 'Initial Launch',
     date: 'March 19, 2026',
-    description: 'FlowDesk is live. Everything you see today is part of the first release.',
+    description: 'FlowDesk is live — a fully customisable productivity dashboard built around your workflow.',
     sections: [
       {
         title: 'Dashboard',
         color: 'accent',
         items: [
-          'Fully customisable dashboard with drag-and-drop, resizable widgets',
-          'Multiple breakpoint layouts (desktop → mobile) saved automatically',
-          'Save, rename, and switch between named layout presets',
-          'Lock / unlock widgets to prevent accidental moves',
-          'Widget visibility toggled from the sidebar',
+          'Drag-and-drop, resizable widgets — arrange your layout however you want',
+          'Save and switch between named layout presets; lock widgets to prevent accidental moves',
         ],
       },
       {
-        title: 'Tasks',
+        title: 'Widgets',
         color: 'blue',
         items: [
-          'Task list with Today / Upcoming / Past / All filters',
-          'Filter by a specific date using the date picker',
-          'Drag-and-drop reordering for incomplete tasks',
-          'Color-coded tasks with completion checkboxes',
-          'Overdue indicator and progress bar',
-          'Edit tasks in an anchored popover with full field editing',
-          'Delete with confirmation modal',
-          'Tag system — build a personal tag library and select tags when adding or editing tasks',
-          'Tag management panel at the bottom of the widget (create & delete tags)',
+          'Tasks — filters, tags, color-coding, drag-to-reorder, and a daily progress bar',
+          'Calendar — mini widget + fullscreen month view with events and multi-day support',
+          'Notes — freeform editor that auto-saves as you type',
+          'Focus Timer — Pomodoro-style countdown with custom session and break durations',
+          'Bookmarks — save links with folders, annotations, and a favorites section',
+          'Milestones — track longer-term goals with target dates and progress bars',
+          'Music — embedded YouTube player with curated playlists or your own URL',
         ],
       },
       {
-        title: 'Calendar',
-        color: 'purple',
-        items: [
-          'Mini calendar widget with colored event dots per day',
-          'Click any day to open a popover — view, add, and delete events for that date',
-          'Fullscreen calendar mode with a full month grid and a right-side events panel',
-          'Add and edit events with title, description, tags, color, start and end dates',
-          'Mobile calendar view with a bottom sheet day detail panel',
-        ],
-      },
-      {
-        title: 'Bookmarks',
-        color: 'yellow',
-        items: [
-          'Save links with an optional title (falls back to domain name), annotation, and folder',
-          'Add bookmark via a popover anchored to the + button',
-          'Switch between list view and card view',
-          'Favorite bookmarks float to the top as a starred section',
-          'Remaining bookmarks grouped by date (Today, Yesterday, weekday, short date)',
-          'Favicon display with fallback icon',
-          'Inline edit and delete with confirmation',
-        ],
-      },
-      {
-        title: 'Milestones',
-        color: 'pink',
-        items: [
-          'Track project milestones with a title, target date, and progress',
-          'Add milestone via a popover — title shown exactly as typed',
-          'Visual progress bars per milestone',
-        ],
-      },
-      {
-        title: 'Focus Timer',
-        color: 'red',
-        items: [
-          'Pomodoro-style focus timer with custom session and break durations',
-          'Visual ring countdown with accent color',
-          'Sidebar warns before hiding the widget while a session is running',
-        ],
-      },
-      {
-        title: 'Music',
-        color: 'teal',
-        items: [
-          'Embedded YouTube music player with curated playlists',
-          'Add a custom YouTube URL via a popover',
-          'Playback controls directly in the widget',
-        ],
-      },
-      {
-        title: 'Notes',
-        color: 'orange',
-        items: [
-          'Rich freeform note editor synced to your account',
-          'Auto-saves as you type',
-        ],
-      },
-      {
-        title: 'Streak & Stats',
-        color: 'accent',
-        items: [
-          'Streak tracker counts consecutive days with at least one completed task',
-          'Sidebar quick stats show today\'s task completion and current streak',
-        ],
-      },
-      {
-        title: 'Sidebar',
+        title: 'Account',
         color: 'gray',
         items: [
-          'Collapsible sidebar with icon-only mode',
-          'Quick-add task directly from the sidebar (with tags, description, color, end date)',
-          'FlowDesk logo links back to the landing page',
-          'Dark / light mode toggle',
-          'PWA install prompt',
-          'Sign out and reset layout actions',
-        ],
-      },
-      {
-        title: 'Account & Onboarding',
-        color: 'blue',
-        items: [
-          'Email / password sign-up and login',
-          'Username setup on first login',
-          'All data synced via Supabase — works across devices',
-          'Terms & Conditions and Privacy Policy pages',
+          'Email/password and Google sign-in; all data synced across devices',
+          'Dark mode, PWA install support, and collapsible sidebar',
         ],
       },
     ],
@@ -151,20 +102,21 @@ const DOT_MAP = {
 };
 
 export default function ChangelogPage() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200 transition-colors">
       <div className="max-w-3xl mx-auto px-6 py-16">
 
         {/* Back link */}
-        <Link
-          to="/"
+        <button
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-sm text-accent-500 hover:text-accent-400 mb-8 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Back to FlowDesk
-        </Link>
+          Back
+        </button>
 
         {/* Page header */}
         <div className="mb-12">
@@ -179,14 +131,14 @@ export default function ChangelogPage() {
           {/* Vertical line */}
           <div className="absolute left-[7px] top-2 bottom-0 w-px bg-gray-200 dark:bg-gray-800" />
 
-          <div className="space-y-16">
-            {RELEASES.map((release) => (
-              <div key={release.version} className="relative pl-8">
+          <div className="space-y-0">
+            {RELEASES.map((release, idx) => (
+              <div key={release.version} className={`relative pl-8 ${idx > 0 ? 'pt-12 mt-12 border-t border-gray-200 dark:border-gray-800' : ''}`}>
                 {/* Timeline dot */}
-                <div className="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full bg-accent-500 ring-4 ring-gray-50 dark:ring-gray-950" />
+                <div className={`absolute left-0 w-3.5 h-3.5 rounded-full bg-accent-500 ring-4 ring-gray-50 dark:ring-gray-950 ${idx > 0 ? 'top-[49px]' : 'top-1.5'}`} />
 
                 {/* Release header */}
-                <div className="flex flex-wrap items-baseline gap-3 mb-1">
+                <div className="flex flex-wrap items-baseline gap-2.5 mb-1">
                   <span className="text-xl font-bold text-gray-900 dark:text-white">
                     v{release.version}
                   </span>

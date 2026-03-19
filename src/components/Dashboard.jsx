@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useWidgetStore } from '../store/widgetStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import WidgetCard from './WidgetCard';
+import DemoSignupPrompt from './DemoSignupPrompt';
 import CalendarWidget from '../features/calendar/CalendarWidget';
 import NotesWidget from '../features/notes/NotesWidget';
 import FocusWidget from '../features/focus/FocusWidget';
@@ -19,6 +20,8 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
+
+const DEMO_FREE_IDS = new Set(['music-1', 'focus-1']);
 
 const WIDGET_COMPONENTS = {
   calendar: CalendarWidget,
@@ -44,17 +47,21 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
-  const { layouts, initialized, loadLayout, onLayoutChange, setUserId, getVisibleWidgets } = useWidgetStore();
+  const isDemo = useUIStore((s) => s.isDemo);
+  const [showDemoPrompt, setShowDemoPrompt] = useState(false);
+  const { layouts, initialized, loadLayout, onLayoutChange, setUserId, getVisibleWidgets, setDemoLayout } = useWidgetStore();
   const layoutLocked = useUIStore((s) => s.layoutLocked);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const visibleWidgets = getVisibleWidgets();
 
   useEffect(() => {
-    if (user) {
+    if (isDemo) {
+      setDemoLayout();
+    } else if (user) {
       setUserId(user.id);
       loadLayout(user.id);
     }
-  }, [user, setUserId, loadLayout]);
+  }, [user, isDemo, setUserId, loadLayout, setDemoLayout]);
 
   if (!initialized) return <DashboardSkeleton />;
 
@@ -80,31 +87,48 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-2">
-      <ResponsiveGridLayout
-        layouts={filteredLayouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 0 }}
-        cols={{ lg: 12, md: 10, sm: 6, xs: 4 }}
-        rowHeight={56}
-        onLayoutChange={onLayoutChange}
-        draggableHandle=".drag-handle"
-        isDraggable={!layoutLocked}
-        isResizable={!layoutLocked}
-        compactType="vertical"
-        margin={isMobile ? [8, 16] : [12, 12]}
-      >
-        {visibleWidgets.map((widget) => {
-          const Component = WIDGET_COMPONENTS[widget.type];
-          if (!Component) return null;
-          return (
-            <div key={widget.id}>
-              <WidgetCard>
-                <Component />
-              </WidgetCard>
-            </div>
-          );
-        })}
-      </ResponsiveGridLayout>
-    </div>
+    <>
+      <div className="p-2">
+        <ResponsiveGridLayout
+          layouts={filteredLayouts}
+          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 0 }}
+          cols={{ lg: 12, md: 10, sm: 6, xs: 4 }}
+          rowHeight={56}
+          onLayoutChange={onLayoutChange}
+          draggableHandle=".drag-handle"
+          isDraggable={!layoutLocked && !isDemo}
+          isResizable={!layoutLocked && !isDemo}
+          compactType="vertical"
+          margin={isMobile ? [8, 16] : [12, 12]}
+        >
+          {visibleWidgets.map((widget) => {
+            const Component = WIDGET_COMPONENTS[widget.type];
+            if (!Component) return null;
+            const locked = isDemo && !DEMO_FREE_IDS.has(widget.id);
+            return (
+              <div key={widget.id} className="relative">
+                <WidgetCard>
+                  <Component />
+                </WidgetCard>
+                {locked && (
+                  <div
+                    className="absolute inset-0 z-10 rounded-xl cursor-pointer flex flex-col items-center justify-center gap-2 bg-gray-950/40 dark:bg-gray-950/60 backdrop-blur-[1px]"
+                    onClick={() => setShowDemoPrompt(true)}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80">Sign up to unlock</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </ResponsiveGridLayout>
+      </div>
+      {showDemoPrompt && <DemoSignupPrompt onClose={() => setShowDemoPrompt(false)} />}
+    </>
   );
 }

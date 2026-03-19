@@ -48,6 +48,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Take over immediately on install so Safari shows updated content
+        skipWaiting: true,
+        clientsClaim: true,
         // Precache all build assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         // SPA fallback: serve index.html for all navigation requests

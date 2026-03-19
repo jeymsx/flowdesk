@@ -81,48 +81,54 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 transition-colors">
+    <div className="min-h-screen bg-gray-50 flex flex-col px-4">
+      <div className="flex-1 flex items-center justify-center">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create account</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Start building your FlowDesk</p>
+          <button onClick={() => navigate('/')} className="inline-flex items-center justify-center w-12 h-12 bg-accent-500 rounded-xl shadow-sm hover:scale-105 transition-transform mb-4">
+            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Create account</h1>
+          <p className="text-gray-500 mt-1">Start building your FlowDesk</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
               placeholder="you@example.com"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 pr-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
+                className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-shadow"
                 placeholder="Min 8 characters"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -135,7 +141,7 @@ export default function Signup() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? STRENGTH_COLOR[score] : 'bg-gray-200 dark:bg-gray-700'}`}
+                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? STRENGTH_COLOR[score] : 'bg-gray-200'}`}
                     />
                   ))}
                 </div>
@@ -149,7 +155,7 @@ export default function Signup() {
                     ].map(({ key, label }) => (
                       <span
                         key={key}
-                        className={`text-[10px] font-medium transition-colors ${checks[key] ? 'text-accent-500' : 'text-gray-400 dark:text-gray-600'}`}
+                        className={`text-[10px] font-medium transition-colors ${checks[key] ? 'text-accent-500' : 'text-gray-400'}`}
                       >
                         {checks[key] ? '✓' : '·'} {label}
                       </span>
@@ -165,26 +171,26 @@ export default function Signup() {
 
           {/* Confirm password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
             <div className="relative">
               <input
                 type={showConfirm ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
-                className={`w-full px-3 py-2.5 pr-10 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                className={`w-full px-3 py-2.5 pr-10 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
                   passwordsMismatch
                     ? 'border-red-400 focus:ring-red-400'
                     : passwordsMatch
                       ? 'border-accent-400 focus:ring-accent-500'
-                      : 'border-gray-300 dark:border-gray-700 focus:ring-accent-500'
+                      : 'border-gray-300 focus:ring-accent-500'
                 }`}
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <EyeIcon open={showConfirm} />
               </button>
@@ -204,18 +210,30 @@ export default function Signup() {
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
+
+          <p className="text-xs text-gray-400 text-center leading-relaxed">
+            By continuing, you acknowledge that you understand and agree to the{' '}
+            <Link to="/terms" className="text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors" target="_blank">
+              Terms &amp; Conditions
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy" className="text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors" target="_blank">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </form>
 
         <div className="relative flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+          <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <button
           onClick={handleGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -226,12 +244,20 @@ export default function Signup() {
           {googleLoading ? 'Redirecting...' : 'Continue with Google'}
         </button>
 
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-center text-sm text-gray-500">
           Already have an account?{' '}
           <Link to="/login" className="text-accent-500 hover:text-accent-400 font-medium">
             Sign in
           </Link>
         </p>
+      </div>
+      </div>
+
+      {/* Footer */}
+      <div className="py-6 flex items-center justify-center gap-6 text-xs text-gray-400">
+        <Link to="/terms" className="hover:text-gray-600 transition-colors">Terms</Link>
+        <Link to="/privacy" className="hover:text-gray-600 transition-colors">Privacy</Link>
+        <Link to="/changelog" className="hover:text-gray-600 transition-colors">Changelog</Link>
       </div>
     </div>
   );

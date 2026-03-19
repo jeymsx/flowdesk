@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useUIStore } from '../../store/uiStore';
+import { useGamificationStore } from '../../store/gamificationStore';
 
 const BUILTIN_PRESETS = {
   pomodoro: { work: 25 * 60, break: 5 * 60, label: '25/5' },
@@ -111,7 +112,17 @@ export default function FocusWidget() {
   const [sessions, setSessions] = useState(0);
   const [isPopped, setIsPopped] = useState(false);
   const intervalRef = useRef(null);
+  const prevSessionsRef = useRef(0);
   const setFocusRunning = useUIStore((s) => s.setFocusRunning);
+  const addFocusSession = useGamificationStore((s) => s.addFocusSession);
+
+  // Award XP each time a focus session completes
+  useEffect(() => {
+    if (sessions > prevSessionsRef.current) {
+      prevSessionsRef.current = sessions;
+      addFocusSession();
+    }
+  }, [sessions, addFocusSession]);
 
   useEffect(() => {
     setFocusRunning(running);

@@ -45,4 +45,8 @@ export const useUIStore = create((set) => ({
 
   focusRunning: false,
   setFocusRunning: (v) => set({ focusRunning: v }),
+
+  isDemo: false,
+  enterDemo: () => set({ isDemo: true }),
+  exitDemo: () => set({ isDemo: false }),
 }));

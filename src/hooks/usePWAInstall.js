@@ -1,26 +1,28 @@
 import { useState, useEffect } from 'react';
 
+// Register at module scope so the event is captured even before React mounts
 let deferredPrompt = null;
+let _setState = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (_setState) _setState(true);
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  if (_setState) _setState(false);
+});
 
 export function usePWAInstall() {
-  const [canInstall, setCanInstall] = useState(false);
+  const [canInstall, setCanInstall] = useState(!!deferredPrompt);
 
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      setCanInstall(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-
-    const installed = () => setCanInstall(false);
-    window.addEventListener('appinstalled', installed);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', installed);
-    };
+    _setState = setCanInstall;
+    // Sync in case the event fired between module load and component mount
+    if (deferredPrompt) setCanInstall(true);
+    return () => { _setState = null; };
   }, []);
 
   const install = async () => {

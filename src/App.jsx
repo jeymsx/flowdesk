@@ -3,25 +3,48 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
 import { useProfileStore } from './store/profileStore';
+import { useGamificationStore } from './store/gamificationStore';
+import XPToastManager from './components/gamification/XPToast';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
 import ChangelogPage from './components/ChangelogPage';
+import AdminPage from './components/AdminPage';
 import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
 import UsernameModal from './components/UsernameModal';
 
+function DemoShell() {
+  const { enterDemo, exitDemo } = useUIStore();
+  useEffect(() => {
+    enterDemo();
+    return () => exitDemo();
+  }, [enterDemo, exitDemo]);
+
+  return (
+    <AppLayout>
+      <Dashboard />
+    </AppLayout>
+  );
+}
+
 function AppShell() {
   const user = useAuthStore((s) => s.user);
   const { fetchProfile, profile } = useProfileStore();
   const { showUsernameModal, setShowUsernameModal } = useUIStore();
+  const { load: loadGamification, reset: resetGamification } = useGamificationStore();
 
   useEffect(() => {
-    if (user) fetchProfile(user.id);
-  }, [user, fetchProfile]);
+    if (user) {
+      fetchProfile(user.id);
+      loadGamification(user.id);
+    } else {
+      resetGamification();
+    }
+  }, [user, fetchProfile, loadGamification, resetGamification]);
 
   // Show modal when profile is loaded and username is missing
   useEffect(() => {
@@ -64,14 +87,17 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <XPToastManager />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/app" element={<AppShell />} />
+        <Route path="/demo" element={<DemoShell />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/changelog" element={<ChangelogPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

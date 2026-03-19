@@ -7,9 +7,15 @@ import { useProfileStore } from '../store/profileStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useEventsStore } from '../store/eventsStore';
 import { useTagsStore } from '../store/tagsStore';
+import { useGamificationStore, computeLevel, getLevelTitle } from '../store/gamificationStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import ConfirmModal from '../components/ConfirmModal';
 import TagSelector from '../components/TagSelector';
+import DemoSignupPrompt from '../components/DemoSignupPrompt';
+import DailyChallenges from '../components/gamification/DailyChallenges';
+import WeeklyRecapModal from '../components/gamification/WeeklyRecapModal';
+import FeedbackModal from '../components/FeedbackModal';
+import LeaderboardModal from '../components/LeaderboardModal';
 
 const EVENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -44,7 +50,7 @@ const WIDGET_ICONS = {
 
 function Icon({ d, size = 5 }) {
   return (
-    <svg className={`w-${size} h-${size} shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={`w-${size} h-${size} shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d={d} />
     </svg>
   );
@@ -70,7 +76,7 @@ function SidebarBtn({ icon, label, collapsed, onClick, danger = false, highlight
 }
 
 export default function Sidebar() {
-  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning } = useUIStore();
+  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning, isDemo, exitDemo } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const navigate = useNavigate();
@@ -84,6 +90,7 @@ export default function Sidebar() {
 
   const [widgetsOpen, setWidgetsOpen] = useState(true);
   const [layoutsOpen, setLayoutsOpen] = useState(true);
+  const [progressOpen, setProgressOpen] = useState(true);
   const [userDropOpen, setUserDropOpen] = useState(false);
   const [savingName, setSavingName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
@@ -99,6 +106,14 @@ export default function Sidebar() {
   const [quickTags, setQuickTags] = useState([]);
   const [quickLoading, setQuickLoading] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showDemoPrompt, setShowDemoPrompt] = useState(false);
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  const { xp, loaded: gamLoaded } = useGamificationStore();
+  const { level, xpInLevel, xpToNext } = computeLevel(xp);
+  const levelTitle = getLevelTitle(level);
   const saveInputRef = useRef(null);
   const addTaskBtnRef = useRef(null);
   const whatsNewBtnRef = useRef(null);
@@ -147,19 +162,33 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full z-30 flex flex-col border-r transition-all duration-300 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 ${
+      className={`fixed top-0 left-0 h-full z-30 flex flex-col border-r transition-all duration-300 bg-gradient-to-b from-white to-gray-50/70 dark:from-gray-900 dark:to-gray-900 border-gray-200/80 dark:border-gray-800 ${
         sidebarOpen ? 'w-60' : 'w-16'
       }`}
     >
       {/* Logo + Collapse toggle */}
       <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-gray-200 dark:border-gray-800">
         {sidebarOpen && (
-          <button
-            onClick={() => navigate('/')}
-            className="text-base font-bold text-accent-500 tracking-tight hover:text-accent-400 transition-colors"
-          >
-            FlowDesk
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-6 h-6 bg-accent-500 rounded flex items-center justify-center shrink-0 group-hover:bg-accent-400 transition-colors">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </div>
+              <span className="text-base font-medium text-gray-900 dark:text-white tracking-tight group-hover:text-accent-500 dark:group-hover:text-accent-400 transition-colors">
+                FlowDesk
+              </span>
+            </button>
+            {isDemo && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-500/10 text-accent-500 font-semibold border border-accent-500/20 leading-none">
+                Demo
+              </span>
+            )}
+          </div>
         )}
         <div className="flex items-center gap-1 ml-auto">
           {sidebarOpen && (
@@ -195,7 +224,7 @@ export default function Sidebar() {
       </div>
 
       {/* User section */}
-      <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
+      {!isDemo && <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <button
           onClick={() => sidebarOpen && setUserDropOpen(!userDropOpen)}
           title={!sidebarOpen ? displayName : undefined}
@@ -239,7 +268,111 @@ export default function Sidebar() {
             </button>
           </div>
         )}
-      </div>
+      </div>}
+
+      {/* Quick-Add Task — pinned above scroll area */}
+      {!isDemo && (
+        <div className="px-3 py-1 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <button
+            ref={addTaskBtnRef}
+            onClick={() => setShowQuickAdd(true)}
+            title={!sidebarOpen ? 'Add task' : undefined}
+            className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border border-accent-200 dark:border-accent-500/25 text-accent-600 dark:text-accent-400 bg-accent-500/5 dark:bg-accent-500/5 hover:bg-accent-500/10 dark:hover:bg-accent-500/10 hover:border-accent-400 dark:hover:border-accent-400 transition-colors ${!sidebarOpen ? 'justify-center' : ''}`}
+          >
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            {sidebarOpen && <span>Add task</span>}
+          </button>
+        </div>
+      )}
+
+      {/* Quick-Add Popover */}
+      {!isDemo && showQuickAdd && createPortal(
+        <div className="fixed inset-0 z-[9990]" onClick={closeQuickAdd}>
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
+            style={{
+              left: (sidebarOpen ? 244 : 68),
+              top: Math.min(
+                addTaskBtnRef.current ? addTaskBtnRef.current.getBoundingClientRect().top : 300,
+                window.innerHeight - 380
+              ),
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Task</h4>
+                <button
+                  onClick={closeQuickAdd}
+                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleQuickAdd} className="space-y-2.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={quickTitle}
+                  onChange={(e) => setQuickTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && closeQuickAdd()}
+                  placeholder="Task title…"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+                <textarea
+                  value={quickDesc}
+                  onChange={(e) => setQuickDesc(e.target.value)}
+                  placeholder="Description (optional)…"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+                />
+                <TagSelector
+                  selected={quickTags}
+                  onChange={setQuickTags}
+                  tags={tags}
+                  onCreateTag={(name) => addTag(user.id, name)}
+                />
+                <div>
+                  <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
+                  <input
+                    type="date"
+                    value={quickEndDate}
+                    min={today}
+                    onChange={(e) => setQuickEndDate(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1.5">
+                    {EVENT_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setQuickColor(c)}
+                        className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
+                        style={{ backgroundColor: c, outline: quickColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={quickLoading || !quickTitle.trim()}
+                    className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    {quickLoading ? '…' : '+ Add'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Scrollable middle */}
       <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1 min-h-0">
@@ -278,43 +411,55 @@ export default function Sidebar() {
             <div className="pt-0.5 space-y-0.5">
               {allWidgets.map((widget) => {
                 const visible = visibleWidgetIds.includes(widget.id);
+                const demoLocked = isDemo && widget.id !== 'music-1' && widget.id !== 'focus-1';
                 return (
                   <button
                     key={widget.id}
                     onClick={() => {
+                      if (demoLocked) { setShowDemoPrompt(true); return; }
                       if (widget.id === 'focus-1' && visible && focusRunning) {
                         setWarnFocusHide(true);
                         return;
                       }
                       toggleWidget(widget.id);
                     }}
-                    title={!sidebarOpen ? `${widget.label} (${visible ? 'visible' : 'hidden'})` : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                      visible
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    title={!sidebarOpen ? (demoLocked ? `${widget.label} (sign up to unlock)` : `${widget.label} (${visible ? 'visible' : 'hidden'})`) : undefined}
+                    className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                      demoLocked
+                        ? 'text-gray-400 dark:text-gray-600 opacity-60'
+                        : visible
+                          ? 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white'
+                          : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
-                    <Icon d={WIDGET_ICONS[widget.type] || ''} />
+                    <span className="shrink-0 group-hover:text-accent-500 transition-colors">
+                      <Icon d={WIDGET_ICONS[widget.type] || ''} />
+                    </span>
                     {sidebarOpen && (
                       <>
                         <span className="flex-1 text-left">{widget.label}</span>
-                        <svg
-                          className="w-4 h-4 shrink-0 opacity-70"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          {visible ? (
-                            <>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </>
-                          ) : (
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                          )}
-                        </svg>
+                        {demoLocked ? (
+                          <svg className="w-3.5 h-3.5 shrink-0 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4 shrink-0 opacity-70"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            {visible ? (
+                              <>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </>
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                            )}
+                          </svg>
+                        )}
                       </>
                     )}
                   </button>
@@ -325,7 +470,7 @@ export default function Sidebar() {
         </div>
 
         {/* Saved Layouts section */}
-        <div className="mt-1">
+        {!isDemo && <div className="mt-1">
           <button
             onClick={() => setLayoutsOpen(!layoutsOpen)}
             title={!sidebarOpen ? 'Saved Layouts' : undefined}
@@ -463,58 +608,100 @@ export default function Sidebar() {
               )}
             </div>
           </div>
-        </div>
+        </div>}
 
-        {/* Quick Stats */}
-        {sidebarOpen && (streak > 0 || todayTotal > 0) && (
-          <div className="mt-2 border-t border-gray-100 dark:border-gray-800 pt-3 pb-2 px-2 space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-1">Today</p>
-            <div className="flex flex-col gap-1">
-              {streak > 0 && (
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                    <svg className="w-3.5 h-3.5 text-accent-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-xs">Streak</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{streak} day{streak !== 1 ? 's' : ''}</span>
-                </div>
+        {/* Progress block — XP, streak, tasks, challenges */}
+        {!isDemo && gamLoaded && (
+          <div className="mt-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+            {/* Section header / collapsed icon */}
+            <button
+              onClick={() => sidebarOpen ? setProgressOpen(!progressOpen) : setShowWeeklyRecap(true)}
+              title={!sidebarOpen ? `Level ${level} · ${xp} XP` : undefined}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              {sidebarOpen ? (
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0 ${progressOpen ? 'rotate-90' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-yellow-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
               )}
-              {todayTotal > 0 && (
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                    <svg className="w-3.5 h-3.5 text-accent-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-xs">Tasks done</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{todayDone}/{todayTotal}</span>
-                </div>
+              {sidebarOpen && (
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex-1 text-left">
+                  Progress
+                </span>
               )}
+            </button>
+
+            {/* Collapsible body */}
+            <div
+              className="overflow-hidden transition-all duration-200"
+              style={{ maxHeight: sidebarOpen && progressOpen ? '500px' : '0px' }}
+            >
+              <div className="pt-2 pb-2 space-y-3 px-1 rounded-xl bg-gray-50/70 dark:bg-gray-800/30 mt-0.5">
+                {/* XP bar — click to open weekly recap */}
+                <button onClick={() => setShowWeeklyRecap(true)} className="w-full group px-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3 h-3 text-yellow-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200">Level {level}</span>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-500">{levelTitle}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-accent-500 group-hover:text-accent-400 transition-colors">{xp} XP</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800/80">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-500 transition-all duration-500"
+                      style={{ width: `${(xpInLevel / xpToNext) * 100}%`, boxShadow: '0 0 6px rgba(34,197,94,0.5)' }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                    View weekly recap →
+                  </p>
+                </button>
+
+                {/* Streak + Tasks row */}
+                {(streak > 0 || todayTotal > 0) && (
+                  <div className="flex flex-col gap-1 px-1">
+                    {streak > 0 && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <svg className="w-3.5 h-3.5 text-accent-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          <span className="text-xs">Streak</span>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{streak} day{streak !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {todayTotal > 0 && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <svg className="w-3.5 h-3.5 text-accent-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="text-xs">Tasks done</span>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{todayDone}/{todayTotal}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Daily Challenges */}
+                <DailyChallenges collapsed={false} />
+              </div>
             </div>
           </div>
         )}
 
-        {/* What's New */}
-        <div className="mt-1 border-t border-gray-100 dark:border-gray-800 pt-2">
-          <button
-            ref={whatsNewBtnRef}
-            onClick={() => setShowWhatsNew(true)}
-            title={!sidebarOpen ? "What's new" : undefined}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-            </svg>
-            {sidebarOpen && (
-              <span className="flex items-center gap-2 flex-1">
-                What&apos;s new
-                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-accent-500 text-white leading-none">v1.0</span>
-              </span>
-            )}
-          </button>
-        </div>
 
         {/* What's New Popover */}
         {showWhatsNew && createPortal(
@@ -536,9 +723,9 @@ export default function Sidebar() {
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
                       <h4 className="text-sm font-bold text-gray-900 dark:text-white">What&apos;s New</h4>
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-500/10 text-accent-600 dark:text-accent-400">v1.0.0</span>
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-500/10 text-accent-600 dark:text-accent-400">v1.1.0</span>
                     </div>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">March 19, 2026 · Initial launch</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">March 20, 2026 · Gamification update</p>
                   </div>
                   <button
                     onClick={() => setShowWhatsNew(false)}
@@ -551,14 +738,14 @@ export default function Sidebar() {
                 </div>
                 <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                   {[
-                    'Tag system — build a library, select when adding tasks',
-                    'Edit task in a popover anchored to the row',
-                    'Tag management panel at the bottom of Tasks widget',
-                    'Bookmark widget with folders, favorites, and date grouping',
-                    'Sidebar quick-add task with tags, color, and end date',
-                    'Quick stats strip — streak and today\'s task count',
-                    'Milestones and Music widgets now use popovers',
-                    'Terms, Privacy, and Changelog pages',
+                    'XP & Levels — earn XP for tasks, focus sessions, and streaks',
+                    'Daily Challenges — 3 rotating goals each day for bonus XP',
+                    'Streak milestones — unlock badges at 7, 30, and 100 days',
+                    'Leaderboard — see how you rank against other users',
+                    'Demo mode — try the full dashboard without signing up',
+                    'Focus Timer pop-out — draggable mini-timer stays visible anywhere',
+                    'Send Feedback — report bugs or suggest improvements',
+                    'Edit task popover redesigned — more space, cleaner layout',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">
                       <svg className="w-3 h-3 mt-0.5 shrink-0 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -582,143 +769,123 @@ export default function Sidebar() {
           document.body
         )}
 
-        {/* Quick-Add Task */}
-        <div className={`${sidebarOpen && (streak > 0 || todayTotal > 0) ? 'mt-2' : 'mt-1'} border-t border-gray-100 dark:border-gray-800 pt-2`}>
-          <button
-            ref={addTaskBtnRef}
-            onClick={() => setShowQuickAdd(true)}
-            title={!sidebarOpen ? 'Add task' : undefined}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            {sidebarOpen && <span>Add task</span>}
-          </button>
-        </div>
-
-        {/* Quick-Add Popover */}
-        {showQuickAdd && createPortal(
-          <div className="fixed inset-0 z-[9990]" onClick={closeQuickAdd}>
-            <div
-              className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
-              style={{
-                left: (sidebarOpen ? 244 : 68),
-                top: Math.min(
-                  addTaskBtnRef.current ? addTaskBtnRef.current.getBoundingClientRect().top : 300,
-                  window.innerHeight - 380
-                ),
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Accent bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Task</h4>
-                  <button
-                    onClick={closeQuickAdd}
-                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <form onSubmit={handleQuickAdd} className="space-y-2.5">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={quickTitle}
-                    onChange={(e) => setQuickTitle(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Escape' && closeQuickAdd()}
-                    placeholder="Task title…"
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
-                  />
-                  <textarea
-                    value={quickDesc}
-                    onChange={(e) => setQuickDesc(e.target.value)}
-                    placeholder="Description (optional)…"
-                    rows={2}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
-                  />
-                  <TagSelector
-                    selected={quickTags}
-                    onChange={setQuickTags}
-                    tags={tags}
-                    onCreateTag={(name) => addTag(user.id, name)}
-                  />
-                  <div>
-                    <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
-                    <input
-                      type="date"
-                      value={quickEndDate}
-                      min={today}
-                      onChange={(e) => setQuickEndDate(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-1.5">
-                      {EVENT_COLORS.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setQuickColor(c)}
-                          className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
-                          style={{ backgroundColor: c, outline: quickColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={quickLoading || !quickTitle.trim()}
-                      className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
-                    >
-                      {quickLoading ? '…' : '+ Add'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
       </div>
 
       {/* Bottom actions */}
       <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-800 shrink-0 space-y-0.5">
-        <SidebarBtn
-          icon="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-          label="Install App"
-          collapsed={!sidebarOpen}
-          onClick={() => {
-            if (canInstall) install();
-            else alert('Open browser menu → "Install FlowDesk" to install as an app.');
-          }}
-        />
-        <SidebarBtn
-          icon={darkMode
-            ? 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
-            : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'}
-          label={darkMode ? 'Light Mode' : 'Dark Mode'}
-          collapsed={!sidebarOpen}
-          onClick={toggleDarkMode}
-        />
-        <SidebarBtn
-          icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          label="Reset Layout"
-          collapsed={!sidebarOpen}
-          onClick={resetLayout}
-        />
-        <SidebarBtn
-          icon="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-          label="Sign Out"
-          collapsed={!sidebarOpen}
-          onClick={signOut}
-          danger
-        />
+        {isDemo ? (
+          <>
+            <SidebarBtn
+              icon={darkMode
+                ? 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+                : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'}
+              label={darkMode ? 'Light Mode' : 'Dark Mode'}
+              collapsed={!sidebarOpen}
+              onClick={toggleDarkMode}
+            />
+            <SidebarBtn
+              icon="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              label="Exit Demo"
+              collapsed={!sidebarOpen}
+              onClick={() => { exitDemo(); navigate('/'); }}
+            />
+            <button
+              onClick={() => navigate('/signup')}
+              title={!sidebarOpen ? 'Sign up free' : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-semibold bg-accent-500 hover:bg-accent-600 text-white ${!sidebarOpen ? 'justify-center' : ''}`}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {sidebarOpen && <span>Sign up free</span>}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* What's New */}
+            <button
+              ref={whatsNewBtnRef}
+              onClick={() => setShowWhatsNew(true)}
+              title={!sidebarOpen ? "What's new" : undefined}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              {sidebarOpen && (
+                <span className="flex items-center gap-2 flex-1">
+                  What&apos;s new
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-accent-500 text-white leading-none">v1.1</span>
+                </span>
+              )}
+            </button>
+
+            {/* Social group */}
+            <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+            <SidebarBtn
+              icon="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+              label="Leaderboard"
+              collapsed={!sidebarOpen}
+              onClick={() => setShowLeaderboard(true)}
+            />
+            <SidebarBtn
+              icon="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+              label="Send Feedback"
+              collapsed={!sidebarOpen}
+              onClick={() => setShowFeedback(true)}
+            />
+
+            {/* App group */}
+            <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+            <SidebarBtn
+              icon="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              label="Install App"
+              collapsed={!sidebarOpen}
+              onClick={() => {
+                if (canInstall) install();
+                else alert('Open browser menu → "Install FlowDesk" to install as an app.');
+              }}
+            />
+            <SidebarBtn
+              icon={darkMode
+                ? 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+                : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'}
+              label={darkMode ? 'Light Mode' : 'Dark Mode'}
+              collapsed={!sidebarOpen}
+              onClick={toggleDarkMode}
+            />
+
+            {/* Account group */}
+            <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+            <SidebarBtn
+              icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              label="Reset Layout"
+              collapsed={!sidebarOpen}
+              onClick={resetLayout}
+            />
+            {user?.id === '87f1a251-0bac-4067-826e-888202d3e3c4' && (
+              <SidebarBtn
+                icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                label="Admin"
+                collapsed={!sidebarOpen}
+                onClick={() => navigate('/admin')}
+              />
+            )}
+            <SidebarBtn
+              icon="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              label="Sign Out"
+              collapsed={!sidebarOpen}
+              onClick={signOut}
+              danger
+            />
+          </>
+        )}
       </div>
+
+      {showDemoPrompt && <DemoSignupPrompt onClose={() => setShowDemoPrompt(false)} />}
+      {showWeeklyRecap && <WeeklyRecapModal onClose={() => setShowWeeklyRecap(false)} />}
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
 
       {warnFocusHide && (
         <ConfirmModal

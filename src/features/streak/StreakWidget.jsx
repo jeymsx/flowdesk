@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
 import { useWidgetStore } from '../../store/widgetStore';
+import { useGamificationStore, STREAK_MILESTONES } from '../../store/gamificationStore';
 import { SkeletonBlock, SkeletonLine } from '../../components/Skeleton';
 
 const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -98,6 +99,7 @@ function StreakSkeleton() {
 export default function StreakWidget() {
   const userId = useAuthStore((s) => s.user?.id);
   const { events, loading, load } = useEventsStore();
+  const { claimStreakMilestone, streakMilestonesClaimed, loaded: gamificationLoaded } = useGamificationStore();
 
   useEffect(() => {
     if (userId) load(userId);
@@ -115,6 +117,16 @@ export default function StreakWidget() {
     });
   };
   const stats = useMemo(() => computeStats(events), [events]);
+
+  // Claim milestone XP when streak hits milestones
+  useEffect(() => {
+    if (!gamificationLoaded) return;
+    for (const { days } of STREAK_MILESTONES) {
+      if (stats.streak >= days && !streakMilestonesClaimed.includes(days)) {
+        claimStreakMilestone(days);
+      }
+    }
+  }, [stats.streak, gamificationLoaded, streakMilestonesClaimed, claimStreakMilestone]);
 
   if (loading && events.length === 0) return <StreakSkeleton />;
 
@@ -144,6 +156,43 @@ export default function StreakWidget() {
           <span className="text-[10px] text-gray-400 dark:text-gray-600 mt-0.5">Complete a task to start one!</span>
         )}
       </div>
+
+      {/* Streak milestone badges */}
+      {streak > 0 && (
+        <div className="flex justify-center gap-2 shrink-0">
+          {STREAK_MILESTONES.map(({ days, label }) => {
+            const reached = streak >= days;
+            return (
+              <div
+                key={days}
+                title={reached ? `${label} unlocked!` : `${days - streak} more days to unlock`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+                  reached
+                    ? 'bg-yellow-400/15 dark:bg-yellow-400/10'
+                    : 'bg-gray-50 dark:bg-gray-800/50 opacity-50'
+                }`}
+              >
+                <span className="text-base leading-none">{reached ? '🏅' : '🔒'}</span>
+                <span className={`text-[9px] font-bold ${reached ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'}`}>
+                  {days}d
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* At-risk warning */}
+      {streak > 0 && todayCompleted === 0 && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
+          <svg className="w-3.5 h-3.5 text-orange-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400">
+            Streak at risk — complete a task to keep it!
+          </span>
+        </div>
+      )}
 
       {/* Today's progress */}
       <div className="shrink-0">
