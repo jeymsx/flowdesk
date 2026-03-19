@@ -22,6 +22,7 @@ export default function AppLayout({ children }) {
         style={{
           minHeight: '100dvh',
           paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         {/* Main content area — padding-bottom keeps content above floating nav */}

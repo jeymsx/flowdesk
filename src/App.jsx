@@ -52,7 +52,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     const themeColor = darkMode ? '#0f172a' : '#f9fafb';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
+    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+      el.setAttribute('content', themeColor);
+    });
+    // Also update body/html bg so safe-area insets show the right color
+    document.documentElement.style.backgroundColor = themeColor;
   }, [darkMode]);
 
   return (

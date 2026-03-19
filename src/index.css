@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fill iOS safe-area insets (status bar + home indicator) with the app bg color.
+   These mirror the dark/light values used in App.jsx and AppLayout. */
+html {
+  background-color: #0f172a;
+}
+html:not(.dark) {
+  background-color: #f9fafb;
+}
+body {
+  background-color: inherit;
+  /* Prevent iOS bounce overscroll from showing white flash */
+  overscroll-behavior: none;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
