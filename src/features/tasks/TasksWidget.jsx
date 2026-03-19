@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
 import { useWidgetStore } from '../../store/widgetStore';
@@ -51,7 +52,7 @@ function applyFilter(events, filter, dateOverride) {
         return e.start_date <= today && end >= today;
       });
     case 'upcoming':
-      return events.filter((e) => e.start_date >= today);
+      return events.filter((e) => e.start_date > today);
     case 'past':
       return events.filter((e) => (e.end_date || e.start_date) < today);
     default:
@@ -61,7 +62,7 @@ function applyFilter(events, filter, dateOverride) {
 
 export default function TasksWidget() {
   const userId = useAuthStore((s) => s.user?.id);
-  const { events, loading, load, toggleComplete, updateEvent, deleteEvent } = useEventsStore();
+  const { events, loading, load, addEvent, toggleComplete, updateEvent, deleteEvent } = useEventsStore();
   const taskOrder = useWidgetStore((s) => s.taskOrder);
   const setTaskOrder = useWidgetStore((s) => s.setTaskOrder);
 
@@ -77,6 +78,32 @@ export default function TasksWidget() {
   const [editSaving, setEditSaving] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  // Add task popover state
+  const [showAdd, setShowAdd] = useState(false);
+  const [addTitle, setAddTitle] = useState('');
+  const [addDesc, setAddDesc] = useState('');
+  const [addEndDate, setAddEndDate] = useState('');
+  const [addColor, setAddColor] = useState(EVENT_COLORS[0]);
+  const [addLoading, setAddLoading] = useState(false);
+  const addBtnRef = useRef(null);
+
+  const closeAdd = () => { setShowAdd(false); setAddTitle(''); setAddDesc(''); setAddEndDate(''); setAddColor(EVENT_COLORS[0]); };
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!addTitle.trim() || !userId) return;
+    const today = toDateStr(new Date());
+    setAddLoading(true);
+    try {
+      await addEvent(userId, addTitle.trim(), today, addEndDate || today, addColor, addDesc.trim());
+      closeAdd();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   // Drag state
   const [dragId, setDragId] = useState(null);
@@ -232,12 +259,99 @@ export default function TasksWidget() {
           </svg>
           Tasks
         </h3>
-        {filtered.length > 0 && (
-          <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
-            {doneCount}/{filtered.length} done
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {filtered.length > 0 && (
+            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+              {doneCount}/{filtered.length} done
+            </span>
+          )}
+          <button
+            ref={addBtnRef}
+            onClick={() => setShowAdd(true)}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            title="Add task"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* Add task popover */}
+      {showAdd && createPortal(
+        <div className="fixed inset-0 z-[9990]" onClick={closeAdd}>
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
+            style={{
+              left: (() => { const r = addBtnRef.current?.getBoundingClientRect(); return r ? Math.min(r.right - 288, window.innerWidth - 296) : 100; })(),
+              top: (() => { const r = addBtnRef.current?.getBoundingClientRect(); return r ? Math.min(r.bottom + 8, window.innerHeight - 380) : 100; })(),
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Task</h4>
+                <button onClick={closeAdd} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleAdd} className="space-y-2.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={addTitle}
+                  onChange={(e) => setAddTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && closeAdd()}
+                  placeholder="Task title…"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+                <textarea
+                  value={addDesc}
+                  onChange={(e) => setAddDesc(e.target.value)}
+                  placeholder="Description (optional)…"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"
+                />
+                <div>
+                  <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
+                  <input
+                    type="date"
+                    value={addEndDate}
+                    min={toDateStr(new Date())}
+                    onChange={(e) => setAddEndDate(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1.5">
+                    {EVENT_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setAddColor(c)}
+                        className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
+                        style={{ backgroundColor: c, outline: addColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={addLoading || !addTitle.trim()}
+                    className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    {addLoading ? '…' : '+ Add'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Filter row */}
       <div className="flex items-center gap-1.5 px-3 pb-2 shrink-0">

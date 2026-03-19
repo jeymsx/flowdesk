@@ -5,8 +5,10 @@ export const useAuthStore = create((set, get) => ({
   user: null,
   session: null,
   loading: true,
+  _authSubscription: null,
 
   initialize: async () => {
+    if (get()._authSubscription) return;
     const { data: { session } } = await supabase.auth.getSession();
     set({
       session,
@@ -14,13 +16,14 @@ export const useAuthStore = create((set, get) => ({
       loading: false,
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       set({
         session,
         user: session?.user ?? null,
         loading: false,
       });
     });
+    set({ _authSubscription: subscription });
   },
 
   signUp: async (email, password) => {

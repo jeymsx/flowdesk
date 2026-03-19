@@ -51,7 +51,7 @@ export const DEFAULT_LAYOUTS = {
     { i: 'focus-1', x: 0, y: 13, w: 4, h: 5, minW: 2, minH: 4 },
     { i: 'music-1', x: 0, y: 18, w: 4, h: 6, minW: 2, minH: 5 },
     { i: 'tasks-1', x: 0, y: 24, w: 4, h: 6, minW: 2, minH: 4 },
-    { i: 'clock-1', x: 0, y: 30, w: 3, h: 5, minW: 2, minH: 3 },
+    { i: 'clock-1', x: 0, y: 30, w: 4, h: 5, minW: 2, minH: 3 },
     { i: 'streak-1', x: 0, y: 35, w: 4, h: 5, minW: 3, minH: 4 },
     { i: 'milestones-1', x: 0, y: 40, w: 4, h: 4, minW: 3, minH: 4 },
   ],
@@ -124,7 +124,16 @@ export const useWidgetStore = create((set, get) => ({
   },
 
   onLayoutChange: (_currentLayout, allLayouts) => {
-    set({ layouts: allLayouts, activeSavedLayoutId: null });
+    const { layouts: currentLayouts, visibleWidgetIds } = get();
+    // Preserve layout entries for hidden widgets so toggling back on restores their position
+    const merged = {};
+    const allBps = new Set([...Object.keys(currentLayouts), ...Object.keys(allLayouts)]);
+    for (const bp of allBps) {
+      const incoming = allLayouts[bp] || [];
+      const hidden = (currentLayouts[bp] || []).filter((item) => !visibleWidgetIds.includes(item.i));
+      merged[bp] = [...incoming, ...hidden];
+    }
+    set({ layouts: merged, activeSavedLayoutId: null });
     persistLayout(get);
   },
 

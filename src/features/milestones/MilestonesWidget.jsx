@@ -144,7 +144,7 @@ function MilestoneCard({ m, isNearest, onEdit, onDelete }) {
   );
 }
 
-function EditCard({ m, today, onSave, onCancel, saving }) {
+function EditCard({ m, onSave, onCancel, saving }) {
   const [title, setTitle] = useState(m.title);
   const [date, setDate] = useState(m.date);
   const [description, setDescription] = useState(m.description || '');
@@ -212,12 +212,21 @@ export default function MilestonesWidget() {
   const [confirmId, setConfirmId] = useState(null);
 
   const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
+  const prevLengthRef = useRef(null);
 
   useEffect(() => { load(userId); }, [userId, load]);
 
   useEffect(() => {
-    const h = Math.max(4, Math.min(4 + milestones.length * 3, 20));
-    setWidgetHeight('milestones-1', h);
+    // Only grow height when milestones are added, not on initial load
+    if (prevLengthRef.current === null) {
+      prevLengthRef.current = milestones.length;
+      return;
+    }
+    if (milestones.length > prevLengthRef.current) {
+      const h = Math.max(4, Math.min(4 + milestones.length * 3, 20));
+      setWidgetHeight('milestones-1', h);
+    }
+    prevLengthRef.current = milestones.length;
   }, [milestones.length, setWidgetHeight]);
 
   const today = toDateStr(new Date());
@@ -359,7 +368,6 @@ export default function MilestonesWidget() {
                 <EditCard
                   key={m.id}
                   m={m}
-                  today={today}
                   saving={editSaving}
                   onSave={handleEdit}
                   onCancel={() => setEditingId(null)}

@@ -51,6 +51,8 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
+    const themeColor = darkMode ? '#0f172a' : '#f9fafb';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
   }, [darkMode]);
 
   return (

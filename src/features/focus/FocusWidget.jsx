@@ -168,7 +168,7 @@ export default function FocusWidget() {
   const reset = () => {
     setRunning(false);
     setIsBreak(false);
-    setTimeLeft(isBreak ? breakTime : workTime);
+    setTimeLeft(workTime);
   };
 
   const togglePlay = () => setRunning((r) => !r);

@@ -66,7 +66,7 @@ function SidebarBtn({ icon, label, collapsed, onClick, danger = false, highlight
 }
 
 export default function Sidebar() {
-  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, setShowUsernameModal, focusRunning } = useUIStore();
+  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const { profile } = useProfileStore();
@@ -144,12 +144,37 @@ export default function Sidebar() {
         {sidebarOpen && (
           <span className="text-base font-bold text-accent-500 tracking-tight">FlowDesk</span>
         )}
-        <button
-          onClick={toggleSidebar}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors ml-auto"
-        >
-          <Icon d={sidebarOpen ? 'M11 19l-7-7 7-7m8 14l-7-7 7-7' : 'M13 5l7 7-7 7M5 5l7 7-7 7'} />
-        </button>
+        <div className="flex items-center gap-1 ml-auto">
+          {sidebarOpen && (
+            <div className="relative group">
+              <button
+                onClick={toggleLayoutLocked}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  layoutLocked
+                    ? 'bg-accent-500/15 text-accent-500'
+                    : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-white'
+                }`}
+              >
+                <Icon d={layoutLocked
+                  ? 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
+                  : 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z'}
+                />
+              </button>
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                <div className="bg-gray-900 dark:bg-gray-700 text-white text-[11px] font-medium rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                  {layoutLocked ? 'Unlock widgets' : 'Lock widgets in place'}
+                  <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45" />
+                </div>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={toggleSidebar}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <Icon d={sidebarOpen ? 'M11 19l-7-7 7-7m8 14l-7-7 7-7' : 'M13 5l7 7-7 7M5 5l7 7-7 7'} />
+          </button>
+        </div>
       </div>
 
       {/* User section */}
@@ -425,7 +450,7 @@ export default function Sidebar() {
 
         {/* Quick Stats */}
         {sidebarOpen && (streak > 0 || todayTotal > 0) && (
-          <div className="mt-2 border-t border-gray-100 dark:border-gray-800 pt-3 px-2 space-y-1.5">
+          <div className="mt-2 border-t border-gray-100 dark:border-gray-800 pt-3 pb-2 px-2 space-y-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-1">Today</p>
             <div className="flex flex-col gap-1">
               {streak > 0 && (

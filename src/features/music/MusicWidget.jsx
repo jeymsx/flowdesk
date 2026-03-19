@@ -13,11 +13,31 @@ function buildSrc(id, autoplay = false) {
   return `https://www.youtube.com/embed/${id}?loop=1&playlist=${id}&rel=0&modestbranding=1${autoplay ? '&autoplay=1' : ''}`;
 }
 
+function extractYouTubeId(url) {
+  const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 export default function MusicWidget() {
   const [stationIdx, setStationIdx] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
+  const [customUrl, setCustomUrl] = useState('');
+  const [customId, setCustomId] = useState(null);
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
-  const station = STATIONS[stationIdx];
+  const isCustom = customId !== null && stationIdx === -1;
+  const station = isCustom ? { id: customId, title: 'Custom', emoji: '🔗' } : STATIONS[stationIdx];
+
+  const handleCustomSubmit = (e) => {
+    e.preventDefault();
+    const id = extractYouTubeId(customUrl);
+    if (!id) return;
+    setCustomId(id);
+    setStationIdx(-1);
+    setAutoplay(true);
+    setShowCustomInput(false);
+    setCustomUrl('');
+  };
 
   const changeStation = (delta) => {
     setAutoplay(true);
@@ -27,6 +47,7 @@ export default function MusicWidget() {
   const goToStation = (i) => {
     setAutoplay(true);
     setStationIdx(i);
+    if (i !== -1) setCustomId(null);
   };
 
   return (
@@ -39,23 +60,60 @@ export default function MusicWidget() {
           </svg>
           Music
         </h3>
-        <select
-          value={stationIdx}
-          onChange={(e) => goToStation(Number(e.target.value))}
-          className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          {STATIONS.map((s, i) => (
-            <option key={i} value={i} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-              {s.emoji} {s.title}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1.5">
+          <select
+            value={stationIdx}
+            onChange={(e) => goToStation(Number(e.target.value))}
+            className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            {stationIdx === -1 && (
+              <option value={-1} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                🔗 Custom
+              </option>
+            )}
+            {STATIONS.map((s, i) => (
+              <option key={i} value={i} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                {s.emoji} {s.title}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowCustomInput((v) => !v)}
+            title="Play custom YouTube URL"
+            className={`p-1 rounded-lg transition-colors ${showCustomInput ? 'bg-accent-500/15 text-accent-500' : 'text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* Custom URL input */}
+      {showCustomInput && (
+        <form onSubmit={handleCustomSubmit} className="flex gap-1.5 shrink-0">
+          <input
+            autoFocus
+            type="text"
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="Paste YouTube URL…"
+            className="flex-1 px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          />
+          <button
+            type="submit"
+            disabled={!customUrl.trim()}
+            className="px-2.5 py-1.5 text-xs font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white rounded-lg transition-colors"
+          >
+            Play
+          </button>
+        </form>
+      )}
 
       {/* YouTube embed — fills available space */}
       <div className="flex-1 min-h-0 rounded-xl overflow-hidden bg-black">
         <iframe
-          key={stationIdx}
+          key={station.id}
           src={buildSrc(station.id, autoplay)}
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen

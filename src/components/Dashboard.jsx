@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useWidgetStore } from '../store/widgetStore';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import WidgetCard from './WidgetCard';
 import CalendarWidget from '../features/calendar/CalendarWidget';
 import NotesWidget from '../features/notes/NotesWidget';
@@ -41,6 +43,8 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const { layouts, initialized, loadLayout, onLayoutChange, setUserId, getVisibleWidgets } = useWidgetStore();
+  const layoutLocked = useUIStore((s) => s.layoutLocked);
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const visibleWidgets = getVisibleWidgets();
 
   useEffect(() => {
@@ -82,10 +86,10 @@ export default function Dashboard() {
         rowHeight={56}
         onLayoutChange={onLayoutChange}
         draggableHandle=".drag-handle"
-        isDraggable
-        isResizable
+        isDraggable={!layoutLocked}
+        isResizable={!layoutLocked}
         compactType="vertical"
-        margin={[12, 12]}
+        margin={isMobile ? [8, 16] : [12, 12]}
       >
         {visibleWidgets.map((widget) => {
           const Component = WIDGET_COMPONENTS[widget.type];
