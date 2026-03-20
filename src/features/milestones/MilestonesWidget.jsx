@@ -214,8 +214,6 @@ export default function MilestonesWidget() {
   const [confirmId, setConfirmId] = useState(null);
 
   const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
-  const widgetInitialized = useWidgetStore((s) => s.initialized);
-  const prevLengthRef = useRef(null);
 
   useEffect(() => { load(userId); }, [userId, load]);
 
@@ -233,24 +231,6 @@ export default function MilestonesWidget() {
     return () => { window.removeEventListener('scroll', calcFormPos, true); window.removeEventListener('resize', calcFormPos); };
   }, [showForm, calcFormPos]);
 
-  useEffect(() => {
-    // Only grow when a milestone is actively added during this session,
-    // not during the initial data load. Wait for the widget layout to be
-    // initialized so we don't override the saved height from Supabase.
-    if (!widgetInitialized) {
-      prevLengthRef.current = milestones.length;
-      return;
-    }
-    if (prevLengthRef.current === null) {
-      prevLengthRef.current = milestones.length;
-      return;
-    }
-    if (milestones.length > prevLengthRef.current) {
-      const h = Math.max(4, Math.min(4 + milestones.length * 3, 20));
-      setWidgetHeight('milestones-1', h);
-    }
-    prevLengthRef.current = milestones.length;
-  }, [milestones.length, widgetInitialized, setWidgetHeight]);
 
   const today = toDateStr(new Date());
 
@@ -262,6 +242,8 @@ export default function MilestonesWidget() {
       await addMilestone(userId, title.trim(), date, description.trim());
       setTitle(''); setDate(''); setDescription('');
       setShowForm(false);
+      const newCount = milestones.length + 1;
+      setWidgetHeight('milestones-1', Math.max(4, Math.min(4 + newCount * 3, 20)));
     } catch (err) {
       console.error(err);
     } finally {

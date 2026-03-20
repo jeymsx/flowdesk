@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabase';
 import { useWidgetStore } from './widgetStore';
+import { useEventsStore } from './eventsStore';
+import { useBookmarksStore } from './bookmarksStore';
+import { useMilestonesStore } from './milestonesStore';
+import { useTagsStore } from './tagsStore';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -35,6 +39,10 @@ export const useAuthStore = create((set, get) => ({
       }
       if (event === 'SIGNED_OUT') {
         useWidgetStore.getState().reset();
+        useEventsStore.getState().reset();
+        useBookmarksStore.getState().reset();
+        useMilestonesStore.getState().reset();
+        useTagsStore.getState().reset();
       }
     });
     set({ _authSubscription: subscription });

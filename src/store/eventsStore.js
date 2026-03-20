@@ -7,6 +7,8 @@ export const useEventsStore = create((set, get) => ({
   loading: false,
   _userId: null,
 
+  reset: () => set({ events: [], loading: false, _userId: null }),
+
   load: async (userId) => {
     if (!userId) return;
     set({ loading: true, _userId: userId });

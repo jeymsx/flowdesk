@@ -29,7 +29,7 @@ export default function ChangelogPage() {
         {/* Timeline */}
         <div className="relative">
           <div className="absolute left-[7px] top-2 bottom-0 w-px bg-gray-200 dark:bg-gray-800" />
-          <div className="space-y-0">
+          <div>
             {RELEASES.map((release, idx) => (
               <div key={release.version} className={`relative pl-8 ${idx > 0 ? 'pt-12 mt-12 border-t border-gray-200 dark:border-gray-800' : ''}`}>
                 <div className={`absolute left-0 w-3.5 h-3.5 rounded-full bg-accent-500 ring-4 ring-gray-50 dark:ring-gray-950 ${idx > 0 ? 'top-[49px]' : 'top-1.5'}`} />

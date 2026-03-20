@@ -7,6 +7,8 @@ export const useTagsStore = create((set, get) => ({
   loading: false,
   _userId: null,
 
+  reset: () => set({ tags: [], loading: false, _userId: null }),
+
   load: async (userId) => {
     if (get()._userId === userId && get().tags.length > 0) return;
     set({ loading: true, _userId: userId });

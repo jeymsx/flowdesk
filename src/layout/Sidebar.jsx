@@ -637,9 +637,9 @@ export default function Sidebar() {
             </button>
 
             <div className="overflow-hidden transition-all duration-200" style={{ maxHeight: sidebarOpen && (isDemo || progressOpen) ? '500px' : '0px' }}>
-              <div className="relative pt-2 pb-2 space-y-3 px-1 rounded-xl bg-gray-50/70 dark:bg-gray-800/30 mt-0.5">
+              <div className="relative pt-2 pb-2 px-1 rounded-xl bg-gray-50/70 dark:bg-gray-800/30 mt-0.5">
                 {/* Demo placeholder content */}
-                <div className={isDemo ? 'select-none pointer-events-none' : ''}>
+                <div className={`space-y-3 ${isDemo ? 'select-none pointer-events-none' : ''}`}>
                   <div className="w-full px-1">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
@@ -682,12 +682,17 @@ export default function Sidebar() {
 
                   {!isDemo && <DailyChallenges collapsed={false} />}
                   {isDemo && (
-                    <div className="px-1 mt-1 space-y-1">
-                      {['Complete 3 tasks', 'Log in for 7 days'].map((label, i) => (
+                    <div className="px-1 mt-2 space-y-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Daily Challenges</span>
+                      {[
+                        { label: 'Complete 3 tasks', xp: '+10 XP' },
+                        { label: 'Finish a focus session', xp: '+15 XP' },
+                        { label: 'Log in for 7 days', xp: '+10 XP' },
+                      ].map((c, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <div className="w-3.5 h-3.5 rounded border border-gray-200 dark:border-gray-700 shrink-0" />
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400 flex-1">{label}</span>
-                          <span className="text-[10px] font-semibold text-accent-500">+10 XP</span>
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 flex-1">{c.label}</span>
+                          <span className="text-[10px] font-semibold text-accent-500">{c.xp}</span>
                         </div>
                       ))}
                     </div>

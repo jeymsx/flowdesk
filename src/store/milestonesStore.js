@@ -5,6 +5,8 @@ export const useMilestonesStore = create((set) => ({
   milestones: [],
   loading: false,
 
+  reset: () => set({ milestones: [], loading: false }),
+
   load: async (userId) => {
     if (!userId) return;
     set({ loading: true });
