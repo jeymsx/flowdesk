@@ -1,5 +1,43 @@
 export const RELEASES = [
   {
+    version: '1.4.0',
+    label: 'Dark Mode Everywhere',
+    date: 'March 20, 2026',
+    description: 'Dark mode now works across every page — landing, changelog, terms, and more. Popovers no longer drift on scroll, and a handful of quality-of-life improvements land across tasks, calendar, and widgets.',
+    sections: [
+      {
+        title: 'Dark Mode',
+        color: 'blue',
+        items: [
+          'Dark mode toggle added to the landing page navbar — controls the theme globally across all pages',
+          'Landing page, changelog, terms, and privacy pages all fully support dark mode',
+          'Dashboard image in the hero switches to a dark variant when dark mode is active',
+          'Default theme is now light mode for new users',
+        ],
+      },
+      {
+        title: 'Improvements',
+        color: 'accent',
+        items: [
+          'All popovers now track their anchor element on scroll — no more floating away from where you clicked',
+          'Add task and add event forms are more spacious — Cancel button added, color picker on its own row',
+          'Start date field added to the Add Task form',
+          'Calendar day popover no longer overflows off-screen on short viewports',
+          'Social sharing previews (Open Graph + Twitter Card) added for link embeds on Discord, Slack, iMessage, etc.',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        color: 'gray',
+        items: [
+          'Milestone widget no longer resets to a tall height after signing out and back in',
+          'Faint lighter background no longer visible behind the dashboard when widgets are made very tall',
+          'Tag colors now save correctly to Supabase on create and update',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     label: 'Sidebar Overhaul',
     date: 'March 20, 2026',

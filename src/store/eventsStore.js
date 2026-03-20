@@ -43,19 +43,39 @@ export const useEventsStore = create((set, get) => ({
     set((s) => ({ events: s.events.filter((e) => e.id !== id) }));
   },
 
+  // Rename a tag name across all events (optimistic + DB)
+  renameTagInEvents: (oldName, newName) => {
+    const dbUpdates = [];
+    const newEvents = get().events.map((e) => {
+      if (!e.tags?.includes(oldName)) return e;
+      const newTags = e.tags.map((t) => (t === oldName ? newName : t));
+      dbUpdates.push({ id: e.id, newTags });
+      return { ...e, tags: newTags };
+    });
+    if (!dbUpdates.length) return;
+    set({ events: newEvents });
+    dbUpdates.forEach(({ id, newTags }) => updateEvent(id, { tags: newTags }).catch(console.error));
+  },
+
   // Optimistic toggle for completed — instant UI, then confirm with server
   toggleComplete: async (id, current) => {
     const next = !current;
+    const event = get().events.find((e) => e.id === id);
+    // Only award XP on first-ever completion (xp_awarded tracks this permanently)
+    const shouldAwardXP = next && !event?.xp_awarded;
     set((s) => ({
-      events: s.events.map((e) => (e.id === id ? { ...e, completed: next } : e)),
+      events: s.events.map((e) =>
+        e.id === id ? { ...e, completed: next, ...(shouldAwardXP ? { xp_awarded: true } : {}) } : e
+      ),
     }));
-    // Award XP when marking as done
-    if (next) {
+    if (shouldAwardXP) {
       const { awardXP, loaded } = useGamificationStore.getState();
       if (loaded) awardXP(10, 'Task complete');
     }
     try {
-      await updateEvent(id, { completed: next });
+      const updates = { completed: next };
+      if (shouldAwardXP) updates.xp_awarded = true;
+      await updateEvent(id, updates);
     } catch (err) {
       console.error(err);
       set((s) => ({

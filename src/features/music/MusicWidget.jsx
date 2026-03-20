@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 // Regular uploaded videos (not live streams) — swap IDs with any YouTube video ID you prefer
@@ -26,6 +26,20 @@ export default function MusicWidget() {
   const [customId, setCustomId] = useState(null);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const linkBtnRef = useRef(null);
+
+  const [customInputPos, setCustomInputPos] = useState({ left: 100, top: 100 });
+  const calcCustomPos = useCallback(() => {
+    const r = linkBtnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setCustomInputPos({ left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)), top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 180)) });
+  }, []);
+  useEffect(() => {
+    if (!showCustomInput) return;
+    calcCustomPos();
+    window.addEventListener('scroll', calcCustomPos, true);
+    window.addEventListener('resize', calcCustomPos);
+    return () => { window.removeEventListener('scroll', calcCustomPos, true); window.removeEventListener('resize', calcCustomPos); };
+  }, [showCustomInput, calcCustomPos]);
 
   const isCustom = customId !== null && stationIdx === -1;
   const station = isCustom ? { id: customId, title: 'Custom', emoji: '🔗' } : STATIONS[stationIdx];
@@ -97,14 +111,7 @@ export default function MusicWidget() {
         <div className="fixed inset-0 z-[9990]" onClick={() => { setShowCustomInput(false); setCustomUrl(''); }}>
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
-            style={(() => {
-              const r = linkBtnRef.current?.getBoundingClientRect();
-              if (!r) return { left: 100, top: 100 };
-              return {
-                left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)),
-                top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 180)),
-              };
-            })()}
+            style={customInputPos}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />

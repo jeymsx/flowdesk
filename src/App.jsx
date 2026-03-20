@@ -26,23 +26,22 @@ function ScrollToTop() {
 
 function applyDarkMode(darkMode) {
   document.documentElement.classList.toggle('dark', darkMode);
-  const themeColor = darkMode ? '#0f172a' : '#f9fafb';
+  const themeColor = darkMode ? '#030712' : '#f9fafb';
   document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
     el.setAttribute('content', themeColor);
   });
   document.documentElement.style.backgroundColor = themeColor;
 }
 
-function removeDarkMode() {
-  document.documentElement.classList.remove('dark');
-  document.documentElement.style.backgroundColor = '#f9fafb';
-  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
-    el.setAttribute('content', '#f9fafb');
-  });
+// Syncs dark mode class to <html> globally for all routes
+function DarkModeSync() {
+  const darkMode = useUIStore((s) => s.darkMode);
+  useEffect(() => { applyDarkMode(darkMode); }, [darkMode]);
+  return null;
 }
 
 function DemoShell() {
-  const { enterDemo, exitDemo, darkMode } = useUIStore();
+  const { enterDemo, exitDemo } = useUIStore();
   const setDemoLayout = useWidgetStore((s) => s.setDemoLayout);
 
   useEffect(() => {
@@ -50,11 +49,6 @@ function DemoShell() {
     setDemoLayout();
     return () => exitDemo();
   }, [enterDemo, exitDemo, setDemoLayout]);
-
-  useEffect(() => {
-    applyDarkMode(darkMode);
-    return () => removeDarkMode();
-  }, [darkMode]);
 
   return (
     <AppLayout>
@@ -66,13 +60,8 @@ function DemoShell() {
 function AppShell() {
   const user = useAuthStore((s) => s.user);
   const { fetchProfile, profile } = useProfileStore();
-  const { showUsernameModal, setShowUsernameModal, darkMode } = useUIStore();
+  const { showUsernameModal, setShowUsernameModal } = useUIStore();
   const { load: loadGamification, reset: resetGamification } = useGamificationStore();
-
-  useEffect(() => {
-    applyDarkMode(darkMode);
-    return () => removeDarkMode();
-  }, [darkMode]);
 
   useEffect(() => {
     if (user) {
@@ -113,6 +102,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <DarkModeSync />
       <ScrollToTop />
       <XPToastManager />
       <Routes>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useMilestonesStore } from '../../store/milestonesStore';
@@ -214,12 +214,33 @@ export default function MilestonesWidget() {
   const [confirmId, setConfirmId] = useState(null);
 
   const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
+  const widgetInitialized = useWidgetStore((s) => s.initialized);
   const prevLengthRef = useRef(null);
 
   useEffect(() => { load(userId); }, [userId, load]);
 
+  const [formPos, setFormPos] = useState({ left: 100, top: 100 });
+  const calcFormPos = useCallback(() => {
+    const r = addBtnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setFormPos({ left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)), top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 320)) });
+  }, []);
   useEffect(() => {
-    // Only grow height when milestones are added, not on initial load
+    if (!showForm) return;
+    calcFormPos();
+    window.addEventListener('scroll', calcFormPos, true);
+    window.addEventListener('resize', calcFormPos);
+    return () => { window.removeEventListener('scroll', calcFormPos, true); window.removeEventListener('resize', calcFormPos); };
+  }, [showForm, calcFormPos]);
+
+  useEffect(() => {
+    // Only grow when a milestone is actively added during this session,
+    // not during the initial data load. Wait for the widget layout to be
+    // initialized so we don't override the saved height from Supabase.
+    if (!widgetInitialized) {
+      prevLengthRef.current = milestones.length;
+      return;
+    }
     if (prevLengthRef.current === null) {
       prevLengthRef.current = milestones.length;
       return;
@@ -229,7 +250,7 @@ export default function MilestonesWidget() {
       setWidgetHeight('milestones-1', h);
     }
     prevLengthRef.current = milestones.length;
-  }, [milestones.length, setWidgetHeight]);
+  }, [milestones.length, widgetInitialized, setWidgetHeight]);
 
   const today = toDateStr(new Date());
 
@@ -307,14 +328,7 @@ export default function MilestonesWidget() {
         <div className="fixed inset-0 z-[9990]" onClick={() => { setShowForm(false); setTitle(''); setDate(''); setDescription(''); }}>
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
-            style={(() => {
-              const r = addBtnRef.current?.getBoundingClientRect();
-              if (!r) return { left: 100, top: 100 };
-              return {
-                left: Math.max(8, Math.min(r.right - 288, window.innerWidth - 296)),
-                top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 320)),
-              };
-            })()}
+            style={formPos}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />

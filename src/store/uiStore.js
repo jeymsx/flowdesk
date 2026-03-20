@@ -3,7 +3,7 @@ import { create } from 'zustand';
 const getInitialDarkMode = () => {
   const stored = localStorage.getItem('flowdesk-dark-mode');
   if (stored !== null) return JSON.parse(stored);
-  return true;
+  return false;
 };
 
 const getInitialLocked = () => {

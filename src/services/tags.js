@@ -10,10 +10,21 @@ export async function fetchTags(userId) {
   return data ?? [];
 }
 
-export async function createTag(userId, name) {
+export async function createTag(userId, name, color = '#22c55e') {
   const { data, error } = await supabase
     .from('user_tags')
-    .insert({ user_id: userId, name })
+    .insert({ user_id: userId, name, color })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTag(id, updates) {
+  const { data, error } = await supabase
+    .from('user_tags')
+    .update(updates)
+    .eq('id', id)
     .select()
     .single();
   if (error) throw error;

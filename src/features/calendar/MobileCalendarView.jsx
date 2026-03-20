@@ -5,6 +5,7 @@ import { useTagsStore } from '../../store/tagsStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import BottomSheet from '../../layout/BottomSheet';
 import TagSelector from '../../components/TagSelector';
+import HexPickerBtn, { isLightColor } from '../../components/HexPickerBtn';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const EVENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -178,24 +179,32 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                {EVENT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-6 h-6 rounded-full transition-transform active:scale-90"
-                    style={{ backgroundColor: c, outline: color === c ? `2.5px solid ${c}` : 'none', outlineOffset: 2 }}
-                  />
-                ))}
-              </div>
+            <div className="flex gap-2 items-center">
+              {EVENT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-6 h-6 rounded-full transition-transform active:scale-90"
+                  style={{ backgroundColor: c, outline: color === c ? `2.5px solid ${c}` : 'none', outlineOffset: 2 }}
+                />
+              ))}
+              <HexPickerBtn color={color} onChange={setColor} presets={EVENT_COLORS} />
+            </div>
+            <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={saving || !title.trim()}
-                className="px-4 py-2 bg-accent-500 hover:bg-accent-600 active:bg-accent-600 disabled:opacity-40 text-white text-sm font-bold rounded-xl transition-colors"
+                className="flex-1 py-2.5 bg-accent-500 hover:bg-accent-600 active:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 {saving ? '…' : '+ Add'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setTitle(''); setDesc(''); setEndDate(''); setColor(EVENT_COLORS[0]); setAddTags([]); }}
+                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </form>
@@ -253,7 +262,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
                           />
                         </div>
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 items-center">
                         {EVENT_COLORS.map((c) => (
                           <button
                             key={c}
@@ -263,6 +272,7 @@ function DayDetailSheet({ open, onClose, selectedDate, events, onAdd, onDelete, 
                             style={{ backgroundColor: c, outline: editColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
                           />
                         ))}
+                        <HexPickerBtn color={editColor} onChange={setEditColor} size="sm" presets={EVENT_COLORS} />
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -450,8 +460,8 @@ export default function MobileCalendarView() {
                         {dayEvts.slice(0, 2).map((evt) => (
                           <div
                             key={evt.id}
-                            className="text-[8px] font-bold px-1 py-px rounded-sm text-white truncate leading-tight w-full"
-                            style={{ backgroundColor: evt.color || '#22c55e' }}
+                            className="text-[8px] font-bold px-1 py-px rounded-sm truncate leading-tight w-full"
+                            style={{ backgroundColor: evt.color || '#22c55e', color: isLightColor(evt.color || '#22c55e') ? '#111827' : '#ffffff' }}
                           >
                             {evt.title}
                           </div>

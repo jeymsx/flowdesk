@@ -20,7 +20,7 @@ import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const DEMO_FREE_IDS = new Set(['music-1', 'focus-1']);
+const DEMO_FREE_IDS = new Set(['music-1', 'focus-1', 'clock-1']);
 
 const WIDGET_COMPONENTS = {
   calendar: CalendarWidget,

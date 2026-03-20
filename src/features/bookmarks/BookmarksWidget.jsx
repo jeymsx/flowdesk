@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useBookmarksStore } from '../../store/bookmarksStore';
 import { useAuthStore } from '../../store/authStore';
@@ -200,12 +200,41 @@ export default function BookmarksWidget() {
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ url: '', title: '', annotation: '', folder: '' });
   const [editSaving, setEditSaving] = useState(false);
-  const [editAnchorRect, setEditAnchorRect] = useState(null);
+  const [editAnchorEl, setEditAnchorEl] = useState(null);
 
   // Delete confirm
   const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => { if (user) load(user.id); }, [user, load]);
+
+  // Popover positions — track anchor on scroll/resize
+  const [addPopPos, setAddPopPos] = useState({ left: 100, top: 100 });
+  const calcAddPos = useCallback(() => {
+    const r = addBtnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setAddPopPos({ left: Math.max(8, Math.min(r.right - 320, window.innerWidth - 328)), top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 460)) });
+  }, []);
+  useEffect(() => {
+    if (!showAdd) return;
+    calcAddPos();
+    window.addEventListener('scroll', calcAddPos, true);
+    window.addEventListener('resize', calcAddPos);
+    return () => { window.removeEventListener('scroll', calcAddPos, true); window.removeEventListener('resize', calcAddPos); };
+  }, [showAdd, calcAddPos]);
+
+  const [editPopPos, setEditPopPos] = useState({ left: 100, top: 100 });
+  const calcEditPos = useCallback(() => {
+    if (!editAnchorEl) return;
+    const r = editAnchorEl.getBoundingClientRect();
+    setEditPopPos({ left: Math.max(8, Math.min(r.right - 320, window.innerWidth - 328)), top: Math.max(8, Math.min(r.bottom + 8, window.innerHeight - 420)) });
+  }, [editAnchorEl]);
+  useEffect(() => {
+    if (!editId || !editAnchorEl) return;
+    calcEditPos();
+    window.addEventListener('scroll', calcEditPos, true);
+    window.addEventListener('resize', calcEditPos);
+    return () => { window.removeEventListener('scroll', calcEditPos, true); window.removeEventListener('resize', calcEditPos); };
+  }, [editId, editAnchorEl, calcEditPos]);
 
   // Derived
   const folders = [...new Set(bookmarks.map((b) => b.folder).filter(Boolean))].sort();
@@ -245,7 +274,7 @@ export default function BookmarksWidget() {
   const startEdit = (b, anchorEl) => {
     setEditId(b.id);
     setEditForm({ url: b.url, title: b.title, annotation: b.annotation || '', folder: b.folder || '' });
-    setEditAnchorRect(anchorEl ? anchorEl.getBoundingClientRect() : null);
+    setEditAnchorEl(anchorEl || null);
     setShowAdd(false);
   };
 
@@ -285,23 +314,6 @@ export default function BookmarksWidget() {
     onDelete: (id) => setConfirmId(id),
     onToggleFavorite: toggleFavorite,
   });
-
-  // ── Popover positions ──────────────────────────────────────────────────────
-
-  const popoverPos = () => {
-    const r = addBtnRef.current?.getBoundingClientRect();
-    if (!r) return { left: 100, top: 100 };
-    const left = Math.min(r.right - 320, window.innerWidth - 328);
-    const top = Math.min(r.bottom + 8, window.innerHeight - 460);
-    return { left: Math.max(8, left), top: Math.max(8, top) };
-  };
-
-  const editPopoverPos = () => {
-    if (!editAnchorRect) return { left: 100, top: 100 };
-    const left = Math.min(editAnchorRect.right - 320, window.innerWidth - 328);
-    const top = Math.min(editAnchorRect.bottom + 8, window.innerHeight - 420);
-    return { left: Math.max(8, left), top: Math.max(8, top) };
-  };
 
   const INPUT_CLS = 'w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500';
 
@@ -359,7 +371,7 @@ export default function BookmarksWidget() {
         <div className="fixed inset-0 z-[9990]" onClick={closeAdd}>
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
-            style={popoverPos()}
+            style={addPopPos}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
@@ -429,7 +441,7 @@ export default function BookmarksWidget() {
         <div className="fixed inset-0 z-[9990]" onClick={() => setEditId(null)}>
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
-            style={editPopoverPos()}
+            style={editPopPos}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />

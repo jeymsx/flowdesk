@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { fetchTags, createTag, deleteTag as deleteTagService } from '../services/tags';
+import { fetchTags, createTag, updateTag as updateTagService, deleteTag as deleteTagService } from '../services/tags';
+import { useEventsStore } from './eventsStore';
 
 export const useTagsStore = create((set, get) => ({
   tags: [],
@@ -17,13 +18,27 @@ export const useTagsStore = create((set, get) => ({
     }
   },
 
-  addTag: async (userId, name) => {
+  addTag: async (userId, name, color = '#22c55e') => {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (get().tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) return;
-    const tag = await createTag(userId, trimmed);
+    const tag = await createTag(userId, trimmed, color);
     set((s) => ({ tags: [...s.tags, tag].sort((a, b) => a.name.localeCompare(b.name)) }));
     return tag;
+  },
+
+  updateTagColor: async (id, color) => {
+    set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, color } : t)) }));
+    await updateTagService(id, { color });
+  },
+
+  renameTag: async (id, oldName, newName) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) return;
+    if (get().tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+    set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, name: trimmed } : t)) }));
+    useEventsStore.getState().renameTagInEvents(oldName, trimmed);
+    await updateTagService(id, { name: trimmed });
   },
 
   removeTag: async (id) => {

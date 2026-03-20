@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
@@ -6,6 +6,8 @@ import { useWidgetStore } from '../../store/widgetStore';
 import { useTagsStore } from '../../store/tagsStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import TagSelector from '../../components/TagSelector';
+import ColorPickerButton from '../../components/ColorPickerButton';
+import HexPickerBtn from '../../components/HexPickerBtn';
 
 const FILTERS = [
   { key: 'today', label: 'Today' },
@@ -65,7 +67,8 @@ function applyFilter(events, filter, dateOverride) {
 export default function TasksWidget() {
   const userId = useAuthStore((s) => s.user?.id);
   const { events, loading, load, addEvent, toggleComplete, updateEvent, deleteEvent } = useEventsStore();
-  const { tags, addTag, removeTag, load: loadTags } = useTagsStore();
+  const { tags, addTag, updateTagColor, renameTag, removeTag, load: loadTags } = useTagsStore();
+  const tagsMap = useMemo(() => new Map(tags.map((t) => [t.name, t])), [tags]);
   const taskOrder = useWidgetStore((s) => s.taskOrder);
   const setTaskOrder = useWidgetStore((s) => s.setTaskOrder);
 
@@ -74,7 +77,8 @@ export default function TasksWidget() {
 
   // Edit state
   const [editingId, setEditingId] = useState(null);
-  const [editBtnRect, setEditBtnRect] = useState(null);
+  const [editBtnEl, setEditBtnEl] = useState(null);
+  const [editPopPos, setEditPopPos] = useState({ left: 100, top: 100 });
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
@@ -89,6 +93,7 @@ export default function TasksWidget() {
   const [showAdd, setShowAdd] = useState(false);
   const [addTitle, setAddTitle] = useState('');
   const [addDesc, setAddDesc] = useState('');
+  const [addStartDate, setAddStartDate] = useState('');
   const [addEndDate, setAddEndDate] = useState('');
   const [addColor, setAddColor] = useState(EVENT_COLORS[0]);
   const [addTags, setAddTags] = useState([]);
@@ -99,11 +104,13 @@ export default function TasksWidget() {
   const [showTagPanel, setShowTagPanel] = useState(false);
   const [showNewTag, setShowNewTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
+  const [editingTag, setEditingTag] = useState(null); // { id, name } | null
 
   const closeAdd = () => {
     setShowAdd(false);
     setAddTitle('');
     setAddDesc('');
+    setAddStartDate('');
     setAddEndDate('');
     setAddColor(EVENT_COLORS[0]);
     setAddTags([]);
@@ -113,9 +120,10 @@ export default function TasksWidget() {
     e.preventDefault();
     if (!addTitle.trim() || !userId) return;
     const today = toDateStr(new Date());
+    const start = addStartDate || today;
     setAddLoading(true);
     try {
-      await addEvent(userId, addTitle.trim(), today, addEndDate || today, addColor, addDesc.trim(), addTags);
+      await addEvent(userId, addTitle.trim(), start, addEndDate || start, addColor, addDesc.trim(), addTags);
       closeAdd();
     } catch (err) {
       console.error(err);
@@ -144,10 +152,38 @@ export default function TasksWidget() {
   useEffect(() => { load(userId); }, [userId, load]);
   useEffect(() => { if (userId) loadTags(userId); }, [userId, loadTags]);
 
+  // Track anchor positions on scroll/resize
+  const [addPopPos, setAddPopPos] = useState({ left: 100, top: 100 });
+  const calcAddPos = useCallback(() => {
+    const r = addBtnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setAddPopPos({ left: Math.min(r.right - 288, window.innerWidth - 296), top: Math.min(r.bottom + 8, window.innerHeight - 420) });
+  }, []);
+  useEffect(() => {
+    if (!showAdd) return;
+    calcAddPos();
+    window.addEventListener('scroll', calcAddPos, true);
+    window.addEventListener('resize', calcAddPos);
+    return () => { window.removeEventListener('scroll', calcAddPos, true); window.removeEventListener('resize', calcAddPos); };
+  }, [showAdd, calcAddPos]);
+
+  const calcEditPos = useCallback(() => {
+    if (!editBtnEl) return;
+    const r = editBtnEl.getBoundingClientRect();
+    setEditPopPos({ left: Math.min(r.right - 320, window.innerWidth - 332), top: Math.min(r.bottom + 8, window.innerHeight - 500) });
+  }, [editBtnEl]);
+  useEffect(() => {
+    if (!editingId || !editBtnEl) return;
+    calcEditPos();
+    window.addEventListener('scroll', calcEditPos, true);
+    window.addEventListener('resize', calcEditPos);
+    return () => { window.removeEventListener('scroll', calcEditPos, true); window.removeEventListener('resize', calcEditPos); };
+  }, [editingId, editBtnEl, calcEditPos]);
+
   // ── Edit ──────────────────────────────────────────────────────────────────
   const startEdit = (evt, btnEl) => {
     setEditingId(evt.id);
-    setEditBtnRect(btnEl ? btnEl.getBoundingClientRect() : null);
+    setEditBtnEl(btnEl || null);
     setEditTitle(evt.title);
     setEditDesc(evt.description || '');
     setEditStartDate(evt.start_date || '');
@@ -283,8 +319,8 @@ export default function TasksWidget() {
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
             style={{
-              left: editBtnRect ? Math.min(editBtnRect.right - 320, window.innerWidth - 332) : 100,
-              top: editBtnRect ? Math.min(editBtnRect.bottom + 8, window.innerHeight - 500) : 100,
+              left: editPopPos.left,
+              top: editPopPos.top,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -370,7 +406,7 @@ export default function TasksWidget() {
                 </div>
 
                 {/* Color swatches */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {EVENT_COLORS.map((c) => (
                     <button
                       key={c}
@@ -380,6 +416,7 @@ export default function TasksWidget() {
                       style={{ backgroundColor: c, outline: editColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
                     />
                   ))}
+                  <HexPickerBtn color={editColor} onChange={setEditColor} presets={EVENT_COLORS} />
                 </div>
 
                 {/* Actions */}
@@ -437,10 +474,7 @@ export default function TasksWidget() {
         <div className="fixed inset-0 z-[9990]" onClick={closeAdd}>
           <div
             className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-72 overflow-hidden"
-            style={{
-              left: (() => { const r = addBtnRef.current?.getBoundingClientRect(); return r ? Math.min(r.right - 288, window.innerWidth - 296) : 100; })(),
-              top: (() => { const r = addBtnRef.current?.getBoundingClientRect(); return r ? Math.min(r.bottom + 8, window.innerHeight - 420) : 100; })(),
-            }}
+            style={{ left: addPopPos.left, top: addPopPos.top }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
@@ -453,7 +487,7 @@ export default function TasksWidget() {
                   </svg>
                 </button>
               </div>
-              <form onSubmit={handleAdd} className="space-y-2.5">
+              <form onSubmit={handleAdd} className="space-y-3">
                 <input
                   autoFocus
                   type="text"
@@ -476,34 +510,56 @@ export default function TasksWidget() {
                   tags={tags}
                   onCreateTag={(name) => addTag(userId, name)}
                 />
-                <div>
-                  <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
-                  <input
-                    type="date"
-                    value={addEndDate}
-                    min={toDateStr(new Date())}
-                    onChange={(e) => setAddEndDate(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1.5">
-                    {EVENT_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setAddColor(c)}
-                        className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
-                        style={{ backgroundColor: c, outline: addColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                      />
-                    ))}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-gray-400 mb-1 font-medium">Start date (optional)</label>
+                    <input
+                      type="date"
+                      value={addStartDate}
+                      onChange={(e) => {
+                        setAddStartDate(e.target.value);
+                        if (addEndDate && e.target.value > addEndDate) setAddEndDate(e.target.value);
+                      }}
+                      className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                    />
                   </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-400 mb-1 font-medium">End date (optional)</label>
+                    <input
+                      type="date"
+                      value={addEndDate}
+                      min={addStartDate || toDateStr(new Date())}
+                      onChange={(e) => setAddEndDate(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {EVENT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setAddColor(c)}
+                      className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
+                      style={{ backgroundColor: c, outline: addColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                    />
+                  ))}
+                  <HexPickerBtn color={addColor} onChange={setAddColor} size="sm" presets={EVENT_COLORS} />
+                </div>
+                <div className="flex gap-2 pt-1">
                   <button
                     type="submit"
                     disabled={addLoading || !addTitle.trim()}
-                    className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                    className="flex-1 py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
                   >
                     {addLoading ? '…' : '+ Add'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeAdd}
+                    className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
                   </button>
                 </div>
               </form>
@@ -692,11 +748,22 @@ export default function TasksWidget() {
                     </div>
                     {evt.tags?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {evt.tags.map((tag) => (
-                          <span key={tag} className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${evt.completed ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600' : 'bg-accent-500/10 text-accent-600 dark:text-accent-400'}`}>
-                            {tag}
-                          </span>
-                        ))}
+                        {evt.tags.map((tagName) => {
+                          const c = tagsMap.get(tagName)?.color || '#22c55e';
+                          return (
+                            <span
+                              key={tagName}
+                              className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
+                              style={
+                                evt.completed
+                                  ? { backgroundColor: '#f3f4f6', color: '#9ca3af' }
+                                  : { backgroundColor: c + '22', color: c }
+                              }
+                            >
+                              {tagName}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -755,51 +822,92 @@ export default function TasksWidget() {
 
         {showTagPanel && (
           <div className="px-3 pb-3">
-            <div className="flex flex-wrap gap-1">
-              {tags.map((tag) => (
-                <span
+            <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => {
+              const c = tag.color || '#22c55e';
+              return (
+                <div
                   key={tag.id}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 group"
                 >
-                  {tag.name}
+                  <ColorPickerButton
+                    color={c}
+                    onChange={(newColor) => updateTagColor(tag.id, newColor)}
+                    size="tiny"
+                  />
+                  {editingTag?.id === tag.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingTag.name}
+                      onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          renameTag(tag.id, tag.name, editingTag.name);
+                          setEditingTag(null);
+                        } else if (e.key === 'Escape') {
+                          setEditingTag(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        renameTag(tag.id, tag.name, editingTag.name);
+                        setEditingTag(null);
+                      }}
+                      className="text-[11px] font-medium bg-transparent border-b border-accent-400 text-gray-700 dark:text-gray-200 focus:outline-none w-16 leading-none"
+                    />
+                  ) : (
+                    <span
+                      className="text-[11px] font-medium text-gray-700 dark:text-gray-200 max-w-[80px] truncate leading-none cursor-text hover:text-accent-500 transition-colors"
+                      onClick={() => setEditingTag({ id: tag.id, name: tag.name })}
+                      title="Click to rename"
+                    >
+                      {tag.name}
+                    </span>
+                  )}
                   <button
                     onClick={() => removeTag(tag.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors leading-none"
+                    className="opacity-0 group-hover:opacity-100 ml-0.5 text-gray-400 hover:text-red-500 transition-all shrink-0"
                     title="Remove tag"
                   >
-                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                </span>
-              ))}
-              {showNewTag ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={newTagInput}
-                  onChange={(e) => setNewTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault();
-                      const name = newTagInput.trim().replace(/,$/, '');
-                      if (name) { addTag(userId, name); setNewTagInput(''); setShowNewTag(false); }
-                    } else if (e.key === 'Escape') {
-                      setNewTagInput(''); setShowNewTag(false);
-                    }
-                  }}
-                  onBlur={() => { setNewTagInput(''); setShowNewTag(false); }}
-                  placeholder="Tag name…"
-                  className="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-accent-500 w-24"
-                />
-              ) : (
-                <button
-                  onClick={() => setShowNewTag(true)}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-gray-400 hover:text-accent-500 border border-dashed border-gray-300 dark:border-gray-600 hover:border-accent-400 transition-colors"
-                >
-                  + New tag
-                </button>
-              )}
+                </div>
+              );
+            })}
+
+            {/* New tag */}
+            {showNewTag ? (
+              <input
+                autoFocus
+                type="text"
+                value={newTagInput}
+                onChange={(e) => setNewTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const name = newTagInput.trim().replace(/,$/, '');
+                    if (name) { addTag(userId, name); setNewTagInput(''); setShowNewTag(false); }
+                  } else if (e.key === 'Escape') {
+                    setNewTagInput(''); setShowNewTag(false);
+                  }
+                }}
+                onBlur={() => { setNewTagInput(''); setShowNewTag(false); }}
+                placeholder="Tag name…"
+                className="px-2.5 py-0.5 rounded-full text-[11px] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-accent-500 w-28"
+              />
+            ) : (
+              <button
+                onClick={() => setShowNewTag(true)}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold text-gray-400 hover:text-accent-500 border border-dashed border-gray-300 dark:border-gray-600 hover:border-accent-400 transition-colors"
+              >
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                New
+              </button>
+            )}
             </div>
           </div>
         )}

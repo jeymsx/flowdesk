@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useEventsStore } from '../../store/eventsStore';
@@ -6,6 +6,7 @@ import { useTagsStore } from '../../store/tagsStore';
 import { useUIStore } from '../../store/uiStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import TagSelector from '../../components/TagSelector';
+import HexPickerBtn, { isLightColor } from '../../components/HexPickerBtn';
 
 // Sunday first
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -57,7 +58,19 @@ function getMonthGrid(year, month) {
 
 const POPOVER_W = 292;
 
-function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
+function computeDayPopoverPos(anchorEl) {
+  const rect = anchorEl.getBoundingClientRect();
+  const MARGIN = 12;
+  const spaceBelow = window.innerHeight - rect.bottom - MARGIN;
+  const spaceAbove = rect.top - MARGIN;
+  const showAbove = spaceBelow < 320 && spaceAbove > spaceBelow;
+  const top = showAbove ? MARGIN : rect.bottom + 4;
+  const maxHeight = showAbove ? spaceAbove - 4 : spaceBelow;
+  const left = Math.max(MARGIN, Math.min(rect.left, window.innerWidth - POPOVER_W - MARGIN));
+  return { top, left, maxHeight };
+}
+
+function DayPopover({ date, anchorEl, dayEvents, onClose, onAdd, onDelete }) {
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
   const [title, setTitle] = useState('');
@@ -70,11 +83,17 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
   const userId = useAuthStore((s) => s.user?.id);
   const { tags, addTag } = useTagsStore();
 
-  // Position: prefer below the cell, flip above if too close to bottom
-  const estimatedH = 320 + dayEvents.length * 28;
-  const showAbove = rect.bottom + estimatedH + 8 > window.innerHeight;
-  const top = showAbove ? Math.max(8, rect.top - estimatedH - 4) : rect.bottom + 4;
-  const left = Math.max(8, Math.min(rect.left, window.innerWidth - POPOVER_W - 8));
+  // Position: prefer below the cell, flip above if not enough space; tracks on scroll/resize
+  const [pos, setPos] = useState(() => computeDayPopoverPos(anchorEl));
+  const updatePos = useCallback(() => setPos(computeDayPopoverPos(anchorEl)), [anchorEl]);
+  useEffect(() => {
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [updatePos]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -123,13 +142,13 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
       )}
       <div
         ref={popoverRef}
-        style={{ position: 'fixed', top, left, width: POPOVER_W, zIndex: 9990 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+        style={{ position: 'fixed', top: pos.top, left: pos.left, width: POPOVER_W, maxHeight: pos.maxHeight, zIndex: 9990 }}
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col"
       >
         {/* Accent bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+        <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600 shrink-0" />
 
-        <div className="p-4">
+        <div className="p-4 overflow-y-auto flex-1">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -177,7 +196,7 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
           {dayEvents.length > 0 && <div className="border-t border-gray-100 dark:border-gray-800 mb-3" />}
 
           {/* Add form */}
-          <form onSubmit={handleSubmit} className="space-y-2.5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <input
               ref={inputRef}
               type="text"
@@ -209,24 +228,32 @@ function DayPopover({ date, rect, dayEvents, onClose, onAdd, onDelete }) {
                 className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1.5">
-                {EVENT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
-                    style={{ backgroundColor: c, outline: color === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                  />
-                ))}
-              </div>
+            <div className="flex gap-1.5 items-center">
+              {EVENT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
+                  style={{ backgroundColor: c, outline: color === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                />
+              ))}
+              <HexPickerBtn color={color} onChange={setColor} size="sm" presets={EVENT_COLORS} />
+            </div>
+            <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={saving || !title.trim()}
-                className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                className="flex-1 py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 {saving ? '…' : '+ Add'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </form>
@@ -261,7 +288,7 @@ function CalendarGrid({ weeks, events, onDayClick }) {
             return (
               <div
                 key={i}
-                onClick={(e) => { e.stopPropagation(); if (current) onDayClick(date, e.currentTarget.getBoundingClientRect()); }}
+                onClick={(e) => { e.stopPropagation(); if (current) onDayClick(date, e.currentTarget); }}
                 className={`flex flex-col items-center justify-center cursor-pointer rounded-lg transition-colors gap-0.5 ${
                   current ? 'hover:bg-gray-50 dark:hover:bg-gray-800/60' : 'opacity-20 pointer-events-none'
                 }`}
@@ -486,8 +513,8 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                             <button
                               key={evt.id}
                               onClick={(e) => { e.stopPropagation(); setSelectedDate(date); }}
-                              className="w-full text-left text-[10px] font-semibold px-1.5 py-0.5 rounded-md text-white truncate leading-tight"
-                              style={{ backgroundColor: evt.color || '#22c55e' }}
+                              className="w-full text-left text-[10px] font-semibold px-1.5 py-0.5 rounded-md truncate leading-tight"
+                              style={{ backgroundColor: evt.color || '#22c55e', color: isLightColor(evt.color || '#22c55e') ? '#111827' : '#ffffff' }}
                               title={evt.title}
                             >
                               {evt.title}
@@ -518,7 +545,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
           </div>
 
           {/* Add form */}
-          <form onSubmit={handleAdd} className="px-5 py-4 shrink-0 border-b border-gray-100 dark:border-gray-800 space-y-2.5">
+          <form onSubmit={handleAdd} className="px-5 py-4 shrink-0 border-b border-gray-100 dark:border-gray-800 space-y-3">
             <input
               ref={titleInputRef}
               type="text"
@@ -550,24 +577,32 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                 className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-500 dark:[color-scheme:dark]"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1.5">
-                {EVENT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setAddColor(c)}
-                    className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
-                    style={{ backgroundColor: c, outline: addColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                  />
-                ))}
-              </div>
+            <div className="flex gap-1.5 items-center">
+              {EVENT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setAddColor(c)}
+                  className="w-5 h-5 rounded-full transition-transform hover:scale-110 shrink-0"
+                  style={{ backgroundColor: c, outline: addColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                />
+              ))}
+              <HexPickerBtn color={addColor} onChange={setAddColor} size="sm" presets={EVENT_COLORS} />
+            </div>
+            <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={adding || !addTitle.trim()}
-                className="px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                className="flex-1 py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 {adding ? '…' : '+ Add'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddTitle(''); setAddDesc(''); setAddEndDate(''); setAddColor(EVENT_COLORS[0]); setAddTags([]); }}
+                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </form>
@@ -626,7 +661,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                           />
                         </div>
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 items-center">
                         {EVENT_COLORS.map((c) => (
                           <button
                             key={c}
@@ -636,6 +671,7 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                             style={{ backgroundColor: c, outline: editColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
                           />
                         ))}
+                        <HexPickerBtn color={editColor} onChange={setEditColor} size="sm" presets={EVENT_COLORS} />
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -740,7 +776,7 @@ export default function CalendarWidget() {
     try { await storeDelete(id); } catch {}
   };
 
-  const handleDayClick = (date, rect) => setAddingTo({ date, rect });
+  const handleDayClick = (date, el) => setAddingTo({ date, el });
 
   const now = new Date();
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
@@ -753,7 +789,7 @@ export default function CalendarWidget() {
       {addingTo && (
         <DayPopover
           date={addingTo.date}
-          rect={addingTo.rect}
+          anchorEl={addingTo.el}
           dayEvents={getEventsForDay(addingTo.date, allEvents)}
           onClose={() => setAddingTo(null)}
           onAdd={handleAddEvent}

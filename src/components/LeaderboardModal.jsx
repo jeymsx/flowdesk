@@ -44,6 +44,7 @@ export default function LeaderboardModal({ onClose }) {
             </button>
           </div>
 
+          <div className="h-[320px] overflow-y-auto pr-1">
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -51,13 +52,13 @@ export default function LeaderboardModal({ onClose }) {
               ))}
             </div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-10">
+            <div className="flex flex-col items-center justify-center h-full">
               <p className="text-2xl mb-2">🏅</p>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No rankings yet</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Complete tasks to earn XP and appear here!</p>
             </div>
           ) : (
-            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+            <div className="space-y-1.5">
               {entries.map((entry, i) => {
                 const { level } = computeLevel(entry.xp);
                 const title = getLevelTitle(level);
@@ -90,6 +91,7 @@ export default function LeaderboardModal({ onClose }) {
               })}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>,
