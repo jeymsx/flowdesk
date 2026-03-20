@@ -10,6 +10,27 @@ export async function getProfile(userId) {
   return data;
 }
 
+export async function checkUsernameAvailable(username, userId) {
+  // Use RPC so it runs with SECURITY DEFINER, bypassing RLS on the profiles table.
+  // Falls back to a direct query if the RPC doesn't exist.
+  const { data, error } = await supabase.rpc('check_username_available', {
+    p_username: username.trim().toLowerCase(),
+    p_user_id: userId,
+  });
+  if (error) {
+    // RPC not set up — fall back to direct query (may be blocked by RLS)
+    const { data: row, error: qErr } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.trim())
+      .neq('id', userId)
+      .maybeSingle();
+    if (qErr) throw qErr;
+    return row === null;
+  }
+  return data === true;
+}
+
 export async function upsertProfile(userId, updates) {
   const { data, error } = await supabase
     .from('profiles')

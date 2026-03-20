@@ -1,5 +1,39 @@
 export const RELEASES = [
   {
+    version: '1.3.0',
+    label: 'Sidebar Overhaul',
+    date: 'March 20, 2026',
+    description: 'A redesigned sidebar with a smarter layout, improved navigation, and a much better profile and account experience.',
+    sections: [
+      {
+        title: 'Sidebar',
+        color: 'accent',
+        items: [
+          'User menu moved to the bottom — profile, help, settings, and sign-out all in one place',
+          'Leaderboard now lives inside the Progress section for quicker access',
+          'Dark mode toggle added to the user menu popover',
+          'Sign-out now shows a confirmation modal so you never log out by accident',
+        ],
+      },
+      {
+        title: 'Profile',
+        color: 'blue',
+        items: [
+          'Profile modal redesigned — gradient hero header, stat cards with icons, cleaner username section',
+          'Username change with real-time availability checking and format validation',
+          'Delete account modal completely redesigned — requires typing DELETE to confirm, cannot be undone accidentally',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        color: 'gray',
+        items: [
+          'Terms & Policies back button now returns to the previous page instead of the landing page',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     label: 'Focus Timer 2.0',
     date: 'March 20, 2026',
