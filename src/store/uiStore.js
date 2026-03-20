@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 
 const getInitialDarkMode = () => {
-  const stored = localStorage.getItem('flowdesk-dark-mode');
-  if (stored !== null) return JSON.parse(stored);
+  try {
+    const stored = localStorage.getItem('flowdesk-dark-mode');
+    if (stored !== null) return JSON.parse(stored);
+  } catch {}
   return false;
 };
 
 const getInitialLocked = () => {
-  const stored = localStorage.getItem('flowdesk-layout-locked');
-  if (stored !== null) return JSON.parse(stored);
+  try {
+    const stored = localStorage.getItem('flowdesk-layout-locked');
+    if (stored !== null) return JSON.parse(stored);
+  } catch {}
   return false;
 };
 
@@ -30,14 +34,14 @@ export const useUIStore = create((set) => ({
   toggleDarkMode: () =>
     set((s) => {
       const next = !s.darkMode;
-      localStorage.setItem('flowdesk-dark-mode', JSON.stringify(next));
+      try { localStorage.setItem('flowdesk-dark-mode', JSON.stringify(next)); } catch {}
       return { darkMode: next };
     }),
 
   toggleLayoutLocked: () =>
     set((s) => {
       const next = !s.layoutLocked;
-      localStorage.setItem('flowdesk-layout-locked', JSON.stringify(next));
+      try { localStorage.setItem('flowdesk-layout-locked', JSON.stringify(next)); } catch {}
       return { layoutLocked: next };
     }),
 

@@ -137,17 +137,19 @@ export default function TasksWidget() {
   const [dragOverId, setDragOverId] = useState(null);
   const dragCounter = useRef(0);
 
-  // Merge new event IDs into taskOrder
+  // Merge new event IDs into taskOrder.
+  // Read taskOrder from the store directly so the effect never captures a stale
+  // snapshot — taskOrder may have changed since the last render of this component.
   useEffect(() => {
     if (!events.length) return;
+    const { taskOrder: current } = useWidgetStore.getState();
     const ids = events.map((e) => e.id);
-    const existing = taskOrder.filter((id) => ids.includes(id));
-    const newIds = ids.filter((id) => !taskOrder.includes(id));
+    const existing = current.filter((id) => ids.includes(id));
+    const newIds = ids.filter((id) => !current.includes(id));
     if (newIds.length > 0) {
       setTaskOrder([...existing, ...newIds]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events]);
+  }, [events, setTaskOrder]);
 
   useEffect(() => { load(userId); }, [userId, load]);
   useEffect(() => { if (userId) loadTags(userId); }, [userId, loadTags]);

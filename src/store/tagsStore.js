@@ -6,15 +6,16 @@ export const useTagsStore = create((set, get) => ({
   tags: [],
   loading: false,
   _userId: null,
+  _loaded: false,
 
-  reset: () => set({ tags: [], loading: false, _userId: null }),
+  reset: () => set({ tags: [], loading: false, _userId: null, _loaded: false }),
 
   load: async (userId) => {
-    if (get()._userId === userId && get().tags.length > 0) return;
+    if (get()._userId === userId && get()._loaded) return;
     set({ loading: true, _userId: userId });
     try {
       const data = await fetchTags(userId);
-      set({ tags: data });
+      set({ tags: data, _loaded: true });
     } finally {
       set({ loading: false });
     }
@@ -31,7 +32,7 @@ export const useTagsStore = create((set, get) => ({
 
   updateTagColor: async (id, color) => {
     set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, color } : t)) }));
-    await updateTagService(id, { color });
+    await updateTagService(id, { color }, get()._userId);
   },
 
   renameTag: async (id, oldName, newName) => {
@@ -39,12 +40,12 @@ export const useTagsStore = create((set, get) => ({
     if (!trimmed || trimmed === oldName) return;
     if (get().tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) return;
     set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, name: trimmed } : t)) }));
-    useEventsStore.getState().renameTagInEvents(oldName, trimmed);
-    await updateTagService(id, { name: trimmed });
+    await useEventsStore.getState().renameTagInEvents(oldName, trimmed);
+    await updateTagService(id, { name: trimmed }, get()._userId);
   },
 
   removeTag: async (id) => {
-    await deleteTagService(id);
+    await deleteTagService(id, get()._userId);
     set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }));
   },
 }));

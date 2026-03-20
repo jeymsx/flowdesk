@@ -1,17 +1,26 @@
 import { supabase } from './supabase';
 
+export async function checkIsAdmin() {
+  const { data, error } = await supabase.rpc('is_admin');
+  if (error) throw error;
+  return !!data;
+}
+
 export async function getAdminUserStats() {
+  // Server-side admin check + aggregate stats via SECURITY DEFINER RPC
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_user_stats');
+  if (rpcError) throw rpcError;
+  if (!rpcData) throw new Error('Not authorized');
+
+  // Fetch profiles for extended dashboard data (levelCounts, topUsers, recentUsers)
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, gamification, updated_at');
+    .select('id, username, gamification, updated_at')
+    .limit(5000);
   if (error) throw error;
   const profiles = data || [];
 
-  const totalUsers = profiles.length;
-  const usersWithUsername = profiles.filter((p) => p.username).length;
-  const activeUsers = profiles.filter((p) => (p.gamification?.xp || 0) > 0).length;
-  const totalXP = profiles.reduce((sum, p) => sum + (p.gamification?.xp || 0), 0);
-  const avgXP = totalUsers > 0 ? Math.round(totalXP / totalUsers) : 0;
+  const { totalUsers, activeUsers, usersWithUsername, totalXP, avgXP } = rpcData;
 
   // Level distribution
   const levelCounts = {};
@@ -65,6 +74,7 @@ export async function getAdminUserStats() {
     recentUsers,
   };
 }
+
 
 export async function getAdminFeedbackStats() {
   const { data, error } = await supabase

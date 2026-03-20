@@ -1,5 +1,64 @@
 export const RELEASES = [
   {
+    version: '2.0.0',
+    label: 'Widgets, Stability & UX',
+    date: 'March 21, 2026',
+    description: 'Focus Timer gets named modes and a fullscreen view. Consistency shows your personal best and a live milestone track. Widgets crash independently, XP is server-validated, and dozens of small fixes land across bookmarks, clock, tasks, and more.',
+    sections: [
+      {
+        title: 'Focus Timer',
+        color: 'accent',
+        items: [
+          'Preset modes renamed — Sprint (25/5), Deep Work (50/10), Quick (15/3), and Custom. Each tab shows the session/break ratio at a glance.',
+          'Fullscreen mode — click the expand icon to fill the entire screen with a large timer. Adapts to light and dark mode. Press ESC to exit.',
+          'Timer ring now labels the active mode name instead of the generic "Focus".',
+          '"Auto" button renamed to "Auto break" for clarity.',
+          'Timer now uses wall-clock time to stay accurate even when the tab is in the background.',
+        ],
+      },
+      {
+        title: 'Consistency Widget',
+        color: 'blue',
+        items: [
+          'Personal best streak shown alongside your current streak.',
+          'Milestone badges replaced with a live horizontal progress track — the fill advances toward 7, 30, and 100 days in real time.',
+          'Motivational line shows exactly how many days remain until your next milestone.',
+        ],
+      },
+      {
+        title: 'Widgets',
+        color: 'teal',
+        items: [
+          'Each widget now crashes independently — one broken widget can no longer take down the whole dashboard.',
+          'Clock widget can now toggle between analog and digital display; preference is saved locally.',
+          'Bookmarks — error message shown when a save or delete fails; javascript: URLs are blocked; input length limits enforced.',
+          'Milestones — error feedback shown on save failures; title and note inputs now have character limits.',
+        ],
+      },
+      {
+        title: 'App & Navigation',
+        color: 'purple',
+        items: [
+          'Pages show an animated loading screen instead of a blank flash while loading.',
+          '404 page added — unknown URLs now show a styled not-found page instead of redirecting to home.',
+          'Dark mode preference and layout lock state now persist across hard refreshes.',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        color: 'gray',
+        items: [
+          'Signing out now fully clears all widget data — no stale data from a previous account can bleed into a new session.',
+          'XP awards are now server-validated — the server decides how much XP each action earns.',
+          'Multiple overlapping sheets (e.g. opening two bottom sheets) no longer prematurely re-enable page scroll when one closes.',
+          'Tag renames now propagate to all existing events, with a rollback if any update fails.',
+          'Task order no longer reads stale snapshots when new events are added.',
+          'Feedback modal now shows a 30-second cooldown after sending to prevent duplicate submissions.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.4.0',
     label: 'Dark Mode Everywhere',
     date: 'March 20, 2026',

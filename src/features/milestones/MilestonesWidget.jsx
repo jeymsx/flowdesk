@@ -145,7 +145,7 @@ function MilestoneCard({ m, isNearest, onEdit, onDelete }) {
   );
 }
 
-function EditCard({ m, onSave, onCancel, saving }) {
+function EditCard({ m, onSave, onCancel, saving, error }) {
   const [title, setTitle] = useState(m.title);
   const [date, setDate] = useState(m.date);
   const [description, setDescription] = useState(m.description || '');
@@ -164,6 +164,7 @@ function EditCard({ m, onSave, onCancel, saving }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Milestone title…"
+        maxLength={100}
         className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
       />
       <input
@@ -177,8 +178,10 @@ function EditCard({ m, onSave, onCancel, saving }) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Description (optional)…"
+        maxLength={200}
         className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
       />
+      {error && <p className="text-xs text-red-500 text-center">{error}</p>}
       <div className="flex gap-2 justify-end">
         <button
           type="button"
@@ -208,9 +211,11 @@ export default function MilestonesWidget() {
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [addError, setAddError] = useState('');
   const [editingId, setEditingId] = useState(null);
   const addBtnRef = useRef(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
   const [confirmId, setConfirmId] = useState(null);
 
   const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
@@ -238,6 +243,7 @@ export default function MilestonesWidget() {
     e.preventDefault();
     if (!title.trim() || !date || !userId) return;
     setSaving(true);
+    setAddError('');
     try {
       await addMilestone(userId, title.trim(), date, description.trim());
       setTitle(''); setDate(''); setDescription('');
@@ -246,6 +252,7 @@ export default function MilestonesWidget() {
       setWidgetHeight('milestones-1', Math.max(4, Math.min(4 + newCount * 3, 20)));
     } catch (err) {
       console.error(err);
+      setAddError('Failed to save. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -253,11 +260,13 @@ export default function MilestonesWidget() {
 
   const handleEdit = async (id, updates) => {
     setEditSaving(true);
+    setEditError('');
     try {
       await editMilestone(id, updates);
       setEditingId(null);
     } catch (err) {
       console.error(err);
+      setEditError('Failed to save. Please try again.');
     } finally {
       setEditSaving(false);
     }
@@ -334,6 +343,7 @@ export default function MilestonesWidget() {
                   onChange={(e) => setTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Escape' && setShowForm(false)}
                   placeholder="Milestone title…"
+                  maxLength={100}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
                 <input
@@ -349,8 +359,12 @@ export default function MilestonesWidget() {
                   onChange={(e) => setDescription(e.target.value)}
                   onKeyDown={(e) => e.key === 'Escape' && setShowForm(false)}
                   placeholder="Description (optional)…"
+                  maxLength={200}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
+                {addError && (
+                  <p className="text-xs text-red-500 text-center">{addError}</p>
+                )}
                 <button
                   type="submit"
                   disabled={saving || !title.trim() || !date}
@@ -385,8 +399,9 @@ export default function MilestonesWidget() {
                   key={m.id}
                   m={m}
                   saving={editSaving}
+                  error={editError}
                   onSave={handleEdit}
-                  onCancel={() => setEditingId(null)}
+                  onCancel={() => { setEditingId(null); setEditError(''); }}
                 />
               ) : (
                 <MilestoneCard

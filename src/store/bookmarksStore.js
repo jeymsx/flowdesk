@@ -10,15 +10,16 @@ export const useBookmarksStore = create((set, get) => ({
   bookmarks: [],
   loading: false,
   _userId: null,
+  _loaded: false,
 
-  reset: () => set({ bookmarks: [], loading: false, _userId: null }),
+  reset: () => set({ bookmarks: [], loading: false, _userId: null, _loaded: false }),
 
   load: async (userId) => {
-    if (get()._userId === userId && get().bookmarks.length > 0) return;
+    if (get()._userId === userId && get()._loaded) return;
     set({ loading: true, _userId: userId });
     try {
       const data = await fetchBookmarks(userId);
-      set({ bookmarks: data });
+      set({ bookmarks: data, _loaded: true });
     } finally {
       set({ loading: false });
     }
@@ -30,12 +31,12 @@ export const useBookmarksStore = create((set, get) => ({
   },
 
   updateBookmark: async (id, updates) => {
-    const data = await updateBookmarkService(id, updates);
+    const data = await updateBookmarkService(id, updates, get()._userId);
     set((s) => ({ bookmarks: s.bookmarks.map((b) => (b.id === id ? data : b)) }));
   },
 
   deleteBookmark: async (id) => {
-    await deleteBookmarkService(id);
+    await deleteBookmarkService(id, get()._userId);
     set((s) => ({ bookmarks: s.bookmarks.filter((b) => b.id !== id) }));
   },
 
@@ -45,7 +46,7 @@ export const useBookmarksStore = create((set, get) => ({
       bookmarks: s.bookmarks.map((b) => (b.id === id ? { ...b, favorite: !current } : b)),
     }));
     try {
-      await updateBookmarkService(id, { favorite: !current });
+      await updateBookmarkService(id, { favorite: !current }, get()._userId);
     } catch {
       // Rollback
       set((s) => ({

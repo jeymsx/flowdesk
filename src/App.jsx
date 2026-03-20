@@ -1,22 +1,29 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
 import { useWidgetStore } from './store/widgetStore';
 import { useProfileStore } from './store/profileStore';
 import { useGamificationStore } from './store/gamificationStore';
 import XPToastManager from './components/gamification/XPToast';
-import LandingPage from './components/LandingPage';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import TermsPage from './components/TermsPage';
-import PrivacyPage from './components/PrivacyPage';
-import ChangelogPage from './components/ChangelogPage';
-import AdminPage from './components/AdminPage';
+import { checkIsAdmin } from './services/admin';
 import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 import UsernameModal from './components/UsernameModal';
+import LoadingScreen from './components/LoadingScreen';
+
+// Non-critical pages — code-split so authenticated dashboard users never
+// download bundles they won't visit.
+const LandingPage    = lazy(() => import('./components/LandingPage'));
+const Login          = lazy(() => import('./components/Login'));
+const Signup         = lazy(() => import('./components/Signup'));
+const TermsPage      = lazy(() => import('./components/TermsPage'));
+const PrivacyPage    = lazy(() => import('./components/PrivacyPage'));
+const ChangelogPage  = lazy(() => import('./components/ChangelogPage'));
+const AdminPage      = lazy(() => import('./components/AdminPage'));
+const NotFoundPage   = lazy(() => import('./components/NotFoundPage'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -93,6 +100,18 @@ function AppShell() {
   );
 }
 
+// Renders AdminPage for admins, NotFoundPage for everyone else.
+// /admin is indistinguishable from any unknown URL to non-admins.
+function AdminGate() {
+  const [status, setStatus] = useState(null); // null=loading, true=admin, false=not
+  useEffect(() => {
+    checkIsAdmin().then(setStatus).catch(() => setStatus(false));
+  }, []);
+  if (status === null) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950" />;
+  if (status) return <AdminPage />;
+  return <NotFoundPage />;
+}
+
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
 
@@ -105,18 +124,22 @@ export default function App() {
       <DarkModeSync />
       <ScrollToTop />
       <XPToastManager />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/app" element={<AppShell />} />
-        <Route path="/demo" element={<DemoShell />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/changelog" element={<ChangelogPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/app" element={<AppShell />} />
+            <Route path="/demo" element={<DemoShell />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/changelog" element={<ChangelogPage />} />
+            <Route path="/admin" element={<AdminGate />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

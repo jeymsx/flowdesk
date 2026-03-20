@@ -40,13 +40,14 @@ export async function updateNote(id, updates, userId) {
     .from('notes')
     .update({ ...encrypted, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
   if (error) throw error;
   return decryptNote(userId, data);
 }
 
-export async function deleteNote(id) {
-  const { error } = await supabase.from('notes').delete().eq('id', id);
+export async function deleteNote(id, userId) {
+  const { error } = await supabase.from('notes').delete().eq('id', id).eq('user_id', userId);
   if (error) throw error;
 }

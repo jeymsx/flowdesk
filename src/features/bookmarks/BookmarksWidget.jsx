@@ -8,6 +8,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 
 function normalizeUrl(url) {
   if (!url) return url;
+  if (/^javascript:/i.test(url)) return 'https://';
   if (!/^https?:\/\//i.test(url)) return 'https://' + url;
   return url;
 }
@@ -194,12 +195,14 @@ export default function BookmarksWidget() {
   const [addAnnotation, setAddAnnotation] = useState('');
   const [addFolder, setAddFolder] = useState('');
   const [addSaving, setAddSaving] = useState(false);
+  const [addError, setAddError] = useState('');
   const addBtnRef = useRef(null);
 
   // Edit popover
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ url: '', title: '', annotation: '', folder: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
   const [editAnchorEl, setEditAnchorEl] = useState(null);
 
   // Delete confirm
@@ -251,13 +254,14 @@ export default function BookmarksWidget() {
 
   const closeAdd = () => {
     setShowAdd(false);
-    setAddUrl(''); setAddTitle(''); setAddAnnotation(''); setAddFolder('');
+    setAddUrl(''); setAddTitle(''); setAddAnnotation(''); setAddFolder(''); setAddError('');
   };
 
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!addUrl.trim()) return;
     setAddSaving(true);
+    setAddError('');
     try {
       await addBookmark(user.id, {
         url: normalizeUrl(addUrl.trim()),
@@ -266,6 +270,8 @@ export default function BookmarksWidget() {
         folder: addFolder.trim() || null,
       });
       closeAdd();
+    } catch {
+      setAddError('Failed to save. Please try again.');
     } finally {
       setAddSaving(false);
     }
@@ -285,6 +291,7 @@ export default function BookmarksWidget() {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     setEditSaving(true);
+    setEditError('');
     try {
       await updateBookmark(editId, {
         url: normalizeUrl(editForm.url.trim()),
@@ -293,6 +300,8 @@ export default function BookmarksWidget() {
         folder: editForm.folder.trim() || null,
       });
       setEditId(null);
+    } catch {
+      setEditError('Failed to save. Please try again.');
     } finally {
       setEditSaving(false);
     }
@@ -301,8 +310,12 @@ export default function BookmarksWidget() {
   const handleDelete = async () => {
     const id = confirmId;
     setConfirmId(null);
-    await deleteBookmark(id);
-    if (editId === id) setEditId(null);
+    try {
+      await deleteBookmark(id);
+      if (editId === id) setEditId(null);
+    } catch (err) {
+      console.error('Failed to delete bookmark:', err);
+    }
   };
 
   // ── Shared row/card props ──────────────────────────────────────────────────
@@ -392,6 +405,7 @@ export default function BookmarksWidget() {
                   onKeyDown={(e) => e.key === 'Escape' && closeAdd()}
                   placeholder="https://example.com"
                   required
+                  maxLength={2000}
                   className={INPUT_CLS}
                 />
                 <input
@@ -399,6 +413,7 @@ export default function BookmarksWidget() {
                   onChange={(e) => setAddTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Escape' && closeAdd()}
                   placeholder="Title (optional — defaults to domain)"
+                  maxLength={200}
                   className={INPUT_CLS}
                 />
                 <textarea
@@ -422,6 +437,9 @@ export default function BookmarksWidget() {
                     {folders.map((f) => <option key={f} value={f} />)}
                   </datalist>
                 </div>
+                {addError && (
+                  <p className="text-xs text-red-500 text-center">{addError}</p>
+                )}
                 <button
                   type="submit"
                   disabled={addSaving || !addUrl.trim()}
@@ -464,6 +482,9 @@ export default function BookmarksWidget() {
                     {folders.map((f) => <option key={f} value={f} />)}
                   </datalist>
                 </div>
+                {editError && (
+                  <p className="text-xs text-red-500 text-center">{editError}</p>
+                )}
                 <button type="submit" disabled={editSaving} className="w-full py-2 text-sm font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white rounded-xl transition-colors">
                   {editSaving ? 'Saving…' : 'Save Changes'}
                 </button>

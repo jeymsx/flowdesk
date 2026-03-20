@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { useUIStore } from '../store/uiStore';
-import { getAdminUserStats, getAdminFeedbackStats } from '../services/admin';
+import { checkIsAdmin, getAdminUserStats, getAdminFeedbackStats } from '../services/admin';
 import { deleteFeedback } from '../services/feedback';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend,
 } from 'recharts';
-
-const ADMIN_UID = '87f1a251-0bac-4067-826e-888202d3e3c4';
 
 const LEVEL_TITLES = ['Newcomer', 'Focused', 'Achiever', 'Consistent', 'Deep Worker', 'Flow Master', 'Legend'];
 function getLevelTitle(level) {
@@ -75,17 +72,11 @@ function CustomTooltip({ active, payload, label }) {
 export default function AdminPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const isAdmin = user?.id === ADMIN_UID;
-  const darkMode = useUIStore((s) => s.darkMode);
-
+  const [isAdmin, setIsAdmin] = useState(null); // null=loading, true=admin, false=not
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    document.documentElement.style.backgroundColor = darkMode ? '#0f172a' : '#f9fafb';
-    return () => {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.backgroundColor = '#f9fafb';
-    };
-  }, [darkMode]);
+    if (!user) { setIsAdmin(false); return; }
+    checkIsAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+  }, [user]);
 
   const [userStats, setUserStats] = useState(null);
   const [feedbackStats, setFeedbackStats] = useState(null);
@@ -142,6 +133,10 @@ export default function AdminPage() {
         </div>
       </div>
     );
+  }
+
+  if (isAdmin === null) {
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-950" />;
   }
 
   if (!isAdmin) {

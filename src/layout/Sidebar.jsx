@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
@@ -12,6 +12,8 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import { RELEASES, COLOR_MAP, DOT_MAP } from '../data/changelog';
 import { supabase } from '../services/supabase';
 import { checkUsernameAvailable } from '../services/profiles';
+import { useShallow } from 'zustand/react/shallow';
+import { checkIsAdmin } from '../services/admin';
 import ConfirmModal from '../components/ConfirmModal';
 import TagSelector from '../components/TagSelector';
 import DemoSignupPrompt from '../components/DemoSignupPrompt';
@@ -107,17 +109,47 @@ function MenuRow({ iconD, label, onClick, danger = false, hasChevron = false, ba
 }
 
 export default function Sidebar() {
-  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning, isDemo, exitDemo } = useUIStore();
+  const { sidebarOpen, toggleSidebar, darkMode, toggleDarkMode, layoutLocked, toggleLayoutLocked, setShowUsernameModal, focusRunning, isDemo, exitDemo } = useUIStore(
+    useShallow((s) => ({
+      sidebarOpen: s.sidebarOpen,
+      toggleSidebar: s.toggleSidebar,
+      darkMode: s.darkMode,
+      toggleDarkMode: s.toggleDarkMode,
+      layoutLocked: s.layoutLocked,
+      toggleLayoutLocked: s.toggleLayoutLocked,
+      setShowUsernameModal: s.setShowUsernameModal,
+      focusRunning: s.focusRunning,
+      isDemo: s.isDemo,
+      exitDemo: s.exitDemo,
+    }))
+  );
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const navigate = useNavigate();
-  const { profile, updateUsername } = useProfileStore();
-  const { allWidgets, visibleWidgetIds, toggleWidget, resetLayout, savedLayouts, activeSavedLayoutId, saveCurrentLayout, applySavedLayout, renameSavedLayout, deleteSavedLayout } = useWidgetStore();
+  const { profile, updateUsername } = useProfileStore(
+    useShallow((s) => ({ profile: s.profile, updateUsername: s.updateUsername }))
+  );
+  const { allWidgets, visibleWidgetIds, toggleWidget, resetLayout, savedLayouts, activeSavedLayoutId, saveCurrentLayout, applySavedLayout, renameSavedLayout, deleteSavedLayout } = useWidgetStore(
+    useShallow((s) => ({
+      allWidgets: s.allWidgets,
+      visibleWidgetIds: s.visibleWidgetIds,
+      toggleWidget: s.toggleWidget,
+      resetLayout: s.resetLayout,
+      savedLayouts: s.savedLayouts,
+      activeSavedLayoutId: s.activeSavedLayoutId,
+      saveCurrentLayout: s.saveCurrentLayout,
+      applySavedLayout: s.applySavedLayout,
+      renameSavedLayout: s.renameSavedLayout,
+      deleteSavedLayout: s.deleteSavedLayout,
+    }))
+  );
   const { canInstall, install } = usePWAInstall();
 
   const events = useEventsStore((s) => s.events);
   const addEvent = useEventsStore((s) => s.addEvent);
-  const { tags, addTag, load: loadTags } = useTagsStore();
+  const { tags, addTag, load: loadTags } = useTagsStore(
+    useShallow((s) => ({ tags: s.tags, addTag: s.addTag, load: s.load }))
+  );
 
   const [widgetsOpen, setWidgetsOpen] = useState(true);
   const [layoutsOpen, setLayoutsOpen] = useState(true);
@@ -140,6 +172,7 @@ export default function Sidebar() {
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // User menu & profile states
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -157,7 +190,9 @@ export default function Sidebar() {
   const [usernameError, setUsernameError] = useState('');
   const usernameCheckRef = useRef(null);
 
-  const { xp, loaded: gamLoaded } = useGamificationStore();
+  const { xp, loaded: gamLoaded } = useGamificationStore(
+    useShallow((s) => ({ xp: s.xp, loaded: s.loaded }))
+  );
   const { level, xpInLevel, xpToNext } = computeLevel(xp);
   const levelTitle = getLevelTitle(level);
   const saveInputRef = useRef(null);
@@ -166,15 +201,24 @@ export default function Sidebar() {
   const helpBtnRef = useRef(null);
 
   const today = toDateStr(new Date());
-  const todayEvents = events.filter((e) => {
-    const end = e.end_date || e.start_date;
-    return e.start_date <= today && end >= today;
-  });
-  const todayDone = todayEvents.filter((e) => e.completed).length;
-  const todayTotal = todayEvents.length;
-  const streak = computeStreak(events);
+  const { todayDone, todayTotal, streak } = useMemo(() => {
+    const todayEvts = events.filter((e) => {
+      const end = e.end_date || e.start_date;
+      return e.start_date <= today && end >= today;
+    });
+    return {
+      todayDone: todayEvts.filter((e) => e.completed).length,
+      todayTotal: todayEvts.length,
+      streak: computeStreak(events),
+    };
+  }, [events, today]);
 
   useEffect(() => { if (user?.id) loadTags(user.id); }, [user?.id, loadTags]);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    checkIsAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+  }, [user]);
 
   useEffect(() => {
     if (!showProfile) return;
@@ -212,8 +256,6 @@ export default function Sidebar() {
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
-  const isAdmin = user?.id === '87f1a251-0bac-4067-826e-888202d3e3c4';
-
   // Debounced username availability check
   useEffect(() => {
     if (!editingUsername) return;
@@ -228,17 +270,20 @@ export default function Sidebar() {
     }
     setUsernameStatus('checking');
     clearTimeout(usernameCheckRef.current);
-    usernameCheckRef.current = setTimeout(async () => {
+    let cancelled = false;
+    usernameCheckRef.current = setTimeout(async () => { // 800ms — rate-limit the availability check
       try {
         const available = await checkUsernameAvailable(name, user?.id);
+        if (cancelled) return;
         setUsernameStatus(available ? 'available' : 'taken');
         if (!available) setUsernameError('Username already taken');
       } catch {
+        if (cancelled) return;
         setUsernameStatus('error');
         setUsernameError('Could not check availability');
       }
-    }, 500);
-    return () => clearTimeout(usernameCheckRef.current);
+    }, 800);
+    return () => { cancelled = true; clearTimeout(usernameCheckRef.current); };
   }, [newUsername, editingUsername, profile?.username, displayName, user?.id]);
 
   const handleUsernameSubmit = async (e) => {
@@ -884,7 +929,7 @@ export default function Sidebar() {
               <MenuRow
                 iconD="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
                 label="What's New"
-                badge="v1.4"
+                badge="v2.0"
                 onClick={() => { closeUserMenu(); setShowChangelog(true); }}
               />
               <MenuRow

@@ -1,18 +1,22 @@
 import { create } from 'zustand';
 import { fetchMilestones, createMilestone, updateMilestone, deleteMilestone } from '../services/milestones';
 
-export const useMilestonesStore = create((set) => ({
+export const useMilestonesStore = create((set, get) => ({
   milestones: [],
   loading: false,
+  _userId: null,
+  _loaded: false,
 
-  reset: () => set({ milestones: [], loading: false }),
+  reset: () => set({ milestones: [], loading: false, _userId: null, _loaded: false }),
 
   load: async (userId) => {
     if (!userId) return;
-    set({ loading: true });
+    // Skip re-fetch if already loaded for this user
+    if (get()._userId === userId && get()._loaded) return;
+    set({ loading: true, _userId: userId });
     try {
       const data = await fetchMilestones(userId);
-      set({ milestones: data });
+      set({ milestones: data, _loaded: true });
     } catch (err) {
       console.error(err);
     } finally {
@@ -29,7 +33,7 @@ export const useMilestonesStore = create((set) => ({
   },
 
   editMilestone: async (id, updates) => {
-    const updated = await updateMilestone(id, updates);
+    const updated = await updateMilestone(id, updates, get()._userId);
     set((s) => ({
       milestones: s.milestones
         .map((m) => (m.id === id ? updated : m))
@@ -39,7 +43,7 @@ export const useMilestonesStore = create((set) => ({
   },
 
   removeMilestone: async (id) => {
-    await deleteMilestone(id);
+    await deleteMilestone(id, get()._userId);
     set((s) => ({ milestones: s.milestones.filter((m) => m.id !== id) }));
   },
 }));

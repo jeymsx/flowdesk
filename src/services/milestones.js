@@ -20,18 +20,19 @@ export async function createMilestone(userId, title, date, description) {
   return data;
 }
 
-export async function updateMilestone(id, updates) {
+export async function updateMilestone(id, updates, userId) {
   const { data, error } = await supabase
     .from('milestones')
     .update(updates)
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function deleteMilestone(id) {
-  const { error } = await supabase.from('milestones').delete().eq('id', id);
+export async function deleteMilestone(id, userId) {
+  const { error } = await supabase.from('milestones').delete().eq('id', id).eq('user_id', userId);
   if (error) throw error;
 }

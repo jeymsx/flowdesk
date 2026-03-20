@@ -1,12 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function ConfirmModal({ title, message, confirmLabel = 'Delete', onConfirm, onCancel }) {
+  // Use a ref so the keydown handler always calls the latest onCancel without
+  // re-registering the listener on every parent render.
+  const onCancelRef = useRef(onCancel);
+  useEffect(() => { onCancelRef.current = onCancel; });
+
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    const onKey = (e) => { if (e.key === 'Escape') onCancelRef.current(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, []);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onCancel}>

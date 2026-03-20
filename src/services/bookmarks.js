@@ -20,18 +20,19 @@ export async function createBookmark(userId, { url, title, annotation, folder })
   return data;
 }
 
-export async function updateBookmark(id, updates) {
+export async function updateBookmark(id, updates, userId) {
   const { data, error } = await supabase
     .from('bookmarks')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function deleteBookmark(id) {
-  const { error } = await supabase.from('bookmarks').delete().eq('id', id);
+export async function deleteBookmark(id, userId) {
+  const { error } = await supabase.from('bookmarks').delete().eq('id', id).eq('user_id', userId);
   if (error) throw error;
 }

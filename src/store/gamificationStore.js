@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getGamification, saveGamification } from '../services/gamification';
+import { getGamification, saveGamification, awardXPRemote } from '../services/gamification';
 
 // ── Level system ───────────────────────────────────────────────────────────────
 // Linear: 100 XP per level
@@ -84,6 +84,7 @@ export const useGamificationStore = create((set, get) => ({
   loaded: false,
 
   load: async (userId) => {
+    if (get()._userId === userId && get().loaded) return;
     set({ _userId: userId, loaded: false });
     try {
       const data = await getGamification(userId);
@@ -107,64 +108,87 @@ export const useGamificationStore = create((set, get) => ({
   },
 
   reset: () => {
+    clearTimeout(saveTimeout);
     set({ xp: 0, daily: null, streakMilestonesClaimed: [], focusSessionsToday: 0, xpToasts: [], _userId: null, loaded: false });
   },
 
-  awardXP: (amount, reason) => {
+  awardXP: async (reason) => {
     const { _userId } = get();
     if (!_userId) return;
-    set((s) => ({
-      xp: s.xp + amount,
-      xpToasts: [...s.xpToasts, { id: Date.now() + Math.random(), amount, reason }],
-    }));
-    debouncedSave(_userId, get);
+    try {
+      const amount = await awardXPRemote(reason);
+      set((s) => ({
+        xp: s.xp + amount,
+        xpToasts: [...s.xpToasts, { id: crypto.randomUUID(), amount, reason }],
+      }));
+    } catch {
+      // Server rejected the XP award — no local update
+    }
   },
 
   dismissToast: (id) => {
     set((s) => ({ xpToasts: s.xpToasts.filter((t) => t.id !== id) }));
   },
 
-  completeChallenge: (challengeId) => {
+  completeChallenge: async (challengeId) => {
     const { _userId, daily } = get();
     if (!daily) return;
     const existing = daily.challenges.find((c) => c.id === challengeId);
     if (!existing || existing.done) return;
-    const pool = CHALLENGE_POOL.find((c) => c.id === challengeId);
-    const xpReward = pool?.xp ?? 25;
+
+    // Mark done optimistically so the UI updates immediately
     const newChallenges = daily.challenges.map((c) =>
       c.id === challengeId ? { ...c, done: true } : c
     );
-    set((s) => ({
-      daily: { ...s.daily, challenges: newChallenges },
-      xp: s.xp + xpReward,
-      xpToasts: [
-        ...s.xpToasts,
-        { id: Date.now() + Math.random(), amount: xpReward, reason: 'Daily challenge!' },
-      ],
-    }));
+    set((s) => ({ daily: { ...s.daily, challenges: newChallenges } }));
     if (_userId) debouncedSave(_userId, get);
+
+    // Award XP via server-validated RPC
+    const rpcReason = challengeId === 'streak_alive'
+      ? 'challenge_streak'
+      : `challenge_${challengeId}`;
+    try {
+      const amount = await awardXPRemote(rpcReason);
+      set((s) => ({
+        xp: s.xp + amount,
+        xpToasts: [
+          ...s.xpToasts,
+          { id: crypto.randomUUID(), amount, reason: 'Daily challenge!' },
+        ],
+      }));
+    } catch {
+      // XP award failed — challenge still marked done locally
+    }
   },
 
-  claimStreakMilestone: (days) => {
+  claimStreakMilestone: async (days) => {
     const { _userId, streakMilestonesClaimed } = get();
     if (streakMilestonesClaimed.includes(days)) return;
     const milestone = STREAK_MILESTONES.find((m) => m.days === days);
-    const xpReward = milestone?.xp ?? 50;
     const label = milestone?.label ?? `${days}-day streak!`;
+
+    // Mark claimed optimistically
     const newClaimed = [...streakMilestonesClaimed, days];
-    set((s) => ({
-      streakMilestonesClaimed: newClaimed,
-      xp: s.xp + xpReward,
-      xpToasts: [
-        ...s.xpToasts,
-        { id: Date.now() + Math.random(), amount: xpReward, reason: label },
-      ],
-    }));
+    set({ streakMilestonesClaimed: newClaimed });
     if (_userId) debouncedSave(_userId, get);
+
+    // Award XP via server-validated RPC
+    try {
+      const amount = await awardXPRemote(`milestone_${days}`);
+      set((s) => ({
+        xp: s.xp + amount,
+        xpToasts: [
+          ...s.xpToasts,
+          { id: crypto.randomUUID(), amount, reason: label },
+        ],
+      }));
+    } catch {
+      // XP award failed — milestone still claimed locally
+    }
   },
 
   addFocusSession: () => {
     set((s) => ({ focusSessionsToday: s.focusSessionsToday + 1 }));
-    get().awardXP(15, 'Focus session');
+    get().awardXP('focus_session');
   },
 }));

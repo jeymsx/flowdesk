@@ -45,9 +45,9 @@ function AnalogClock({ hours, minutes, seconds }) {
 
 export default function ClockWidget() {
   const [now, setNow] = useState(new Date());
-  const [showAnalog, setShowAnalog] = useState(
-    () => localStorage.getItem('clock-show-analog') !== 'false'
-  );
+  const [showAnalog, setShowAnalog] = useState(() => {
+    try { return localStorage.getItem('clock-show-analog') !== 'false'; } catch { return true; }
+  });
   const { setWidgetHeight, layouts } = useWidgetStore((s) => ({ setWidgetHeight: s.setWidgetHeight, layouts: s.layouts }));
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function ClockWidget() {
 
   const toggleAnalog = () => {
     const next = !showAnalog;
-    localStorage.setItem('clock-show-analog', String(next));
+    try { localStorage.setItem('clock-show-analog', String(next)); } catch {}
     if (!next) {
       // Switching to digital-only: shrink to compact height
       setWidgetHeight('clock-1', 3);

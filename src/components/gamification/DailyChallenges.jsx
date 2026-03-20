@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGamificationStore, CHALLENGE_POOL, getDailyChallengesForDate } from '../../store/gamificationStore';
 import { useEventsStore } from '../../store/eventsStore';
 
@@ -22,7 +23,14 @@ function computeStreak(events) {
 }
 
 export default function DailyChallenges({ collapsed }) {
-  const { daily, completeChallenge, focusSessionsToday, loaded } = useGamificationStore();
+  const { daily, completeChallenge, focusSessionsToday, loaded } = useGamificationStore(
+    useShallow((s) => ({
+      daily: s.daily,
+      completeChallenge: s.completeChallenge,
+      focusSessionsToday: s.focusSessionsToday,
+      loaded: s.loaded,
+    }))
+  );
   const events = useEventsStore((s) => s.events);
 
   const today = todayStr();
@@ -36,7 +44,9 @@ export default function DailyChallenges({ collapsed }) {
 
   const challengeState = { tasksDoneToday, tasksTotalToday, focusSessionsToday, streak };
 
-  // Auto-complete challenges when conditions are met
+  // Auto-complete challenges when conditions are met.
+  // `daily` is included so the guard `existing?.done` always reads the current
+  // state and doesn't re-complete a challenge that was just marked done.
   useEffect(() => {
     if (!loaded || !daily) return;
     const todayChallenges = getDailyChallengesForDate(today);
@@ -49,7 +59,7 @@ export default function DailyChallenges({ collapsed }) {
         completeChallenge(c.id);
       }
     }
-  }, [tasksDoneToday, focusSessionsToday, streak, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tasksDoneToday, tasksTotalToday, focusSessionsToday, streak, loaded, daily, completeChallenge]);
 
   if (!loaded || !daily) return null;
 

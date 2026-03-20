@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
+import { useShallow } from 'zustand/react/shallow';
 import { useWidgetStore } from '../store/widgetStore';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -14,6 +15,7 @@ import ClockWidget from '../features/clock/ClockWidget';
 import StreakWidget from '../features/streak/StreakWidget';
 import MilestonesWidget from '../features/milestones/MilestonesWidget';
 import BookmarksWidget from '../features/bookmarks/BookmarksWidget';
+import ErrorBoundary from './ErrorBoundary';
 import { SkeletonBlock } from './Skeleton';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -47,10 +49,31 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const isDemo = useUIStore((s) => s.isDemo);
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
-  const { layouts, initialized, onLayoutChange, getVisibleWidgets } = useWidgetStore();
+  const { layouts, initialized, onLayoutChange, allWidgets, visibleWidgetIds } = useWidgetStore(
+    useShallow((s) => ({
+      layouts: s.layouts,
+      initialized: s.initialized,
+      onLayoutChange: s.onLayoutChange,
+      allWidgets: s.allWidgets,
+      visibleWidgetIds: s.visibleWidgetIds,
+    }))
+  );
   const layoutLocked = useUIStore((s) => s.layoutLocked);
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const visibleWidgets = getVisibleWidgets();
+
+  const visibleWidgets = useMemo(
+    () => allWidgets.filter((w) => visibleWidgetIds.includes(w.id)),
+    [allWidgets, visibleWidgetIds]
+  );
+
+  const filteredLayouts = useMemo(() => {
+    const visibleIds = new Set(visibleWidgets.map((w) => w.id));
+    const result = {};
+    for (const [bp, items] of Object.entries(layouts)) {
+      result[bp] = items.filter((item) => visibleIds.has(item.i));
+    }
+    return result;
+  }, [visibleWidgets, layouts]);
 
   if (!initialized) return <DashboardSkeleton />;
 
@@ -67,12 +90,6 @@ export default function Dashboard() {
         <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Toggle widgets on from the sidebar</p>
       </div>
     );
-  }
-
-  const visibleIds = new Set(visibleWidgets.map((w) => w.id));
-  const filteredLayouts = {};
-  for (const [bp, items] of Object.entries(layouts)) {
-    filteredLayouts[bp] = items.filter((item) => visibleIds.has(item.i));
   }
 
   return (
@@ -97,7 +114,9 @@ export default function Dashboard() {
             return (
               <div key={widget.id} className="relative">
                 <WidgetCard>
-                  <Component />
+                  <ErrorBoundary>
+                    <Component />
+                  </ErrorBoundary>
                 </WidgetCard>
                 {locked && (
                   <div

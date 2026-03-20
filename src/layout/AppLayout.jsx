@@ -6,11 +6,14 @@ import MobileProfileSheet from './MobileProfileSheet';
 import MobileCalendarView from '../features/calendar/MobileCalendarView';
 import FocusTimerEngine from '../features/focus/FocusTimerEngine';
 import FloatingTimer from '../features/focus/FloatingTimer';
+import { useShallow } from 'zustand/react/shallow';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default function AppLayout({ children }) {
-  const { sidebarOpen, setSidebarOpen, mobileTab } = useUIStore();
+  const { sidebarOpen, setSidebarOpen, mobileTab } = useUIStore(
+    useShallow((s) => ({ sidebarOpen: s.sidebarOpen, setSidebarOpen: s.setSidebarOpen, mobileTab: s.mobileTab }))
+  );
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {

@@ -10,10 +10,12 @@ export default function LeaderboardModal({ onClose }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     getLeaderboard()
-      .then(setEntries)
+      .then((data) => { if (!cancelled) setEntries(data); })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   return createPortal(

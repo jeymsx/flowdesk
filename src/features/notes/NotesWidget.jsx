@@ -75,10 +75,12 @@ export default function NotesWidget() {
 
   useEffect(() => {
     if (!userId) return;
+    let cancelled = false;
     setLoading(true);
     fetchNotes(userId)
-      .then((data) => { setNotes(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then((data) => { if (!cancelled) { setNotes(data); setLoading(false); } })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [userId]);
 
   // Auto-save 1s after any edit
@@ -89,7 +91,7 @@ export default function NotesWidget() {
       doSave(activeNote, title, content, tags);
     }, 1000);
     return () => clearTimeout(saveTimer.current);
-  }, [title, content, tags]); // eslint-disable-line
+  }, [activeNote, title, content, tags]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doSave = async (note, t, c, tg) => {
     if (t === note.title && c === note.content && JSON.stringify(tg) === JSON.stringify(note.tags)) return;
@@ -141,7 +143,7 @@ export default function NotesWidget() {
 
   const handleDeleteNote = async (id) => {
     try {
-      await deleteNote(id);
+      await deleteNote(id, userId);
       setNotes((prev) => prev.filter((n) => n.id !== id));
       if (activeNote?.id === id) { setActiveNote(null); setTagInput(''); }
     } catch {}

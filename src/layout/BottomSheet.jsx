@@ -1,24 +1,35 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+// Count of currently-open sheets so that closing one doesn't unlock scroll
+// while another sheet is still open.
+let openSheetCount = 0;
+
 export default function BottomSheet({ open, onClose, title, children, maxHeight = '85vh' }) {
   const sheetRef = useRef(null);
 
+  // Keep a ref to onClose so the keydown handler never goes stale without
+  // re-registering the listener on every parent render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') onCloseRef.current(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open]);
 
-  // Prevent body scroll when sheet is open
+  // Prevent body scroll when sheet is open; use a counter so that multiple
+  // concurrent sheets don't prematurely re-enable scrolling when one closes.
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    if (!open) return;
+    openSheetCount++;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      openSheetCount--;
+      if (openSheetCount === 0) document.body.style.overflow = '';
+    };
   }, [open]);
 
   if (!open) return null;

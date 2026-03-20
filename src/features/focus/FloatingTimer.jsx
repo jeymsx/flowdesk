@@ -237,18 +237,27 @@ export default function FloatingTimer() {
         );
 
         // User closed the PiP window via the OS chrome
-        pipWin.addEventListener('pagehide', () => {
+        const onPageHide = () => {
           if (pipRootRef.current) { pipRootRef.current.unmount(); pipRootRef.current = null; }
           pipWinRef.current = null;
           setPopped(false);
-        });
+        };
+        pipWin.addEventListener('pagehide', onPageHide);
       } catch (err) {
-        // Denied or unsupported at runtime — leave isPopped=true so draggable shows
+        // Denied or unsupported at runtime — close the pop-out
         console.warn('Document PiP unavailable:', err);
+        if (!cancelled) setPopped(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // If the window is still open when the effect re-runs (e.g. deps changed),
+      // remove the pagehide listener so it doesn't fire after cleanup.
+      if (pipWinRef.current && !pipWinRef.current.closed) {
+        closePiP();
+      }
+    };
   }, [isPopped, usePiP, closePiP, setPopped]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup on unmount

@@ -10,15 +10,19 @@ export default function FeedbackModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+
+  const onCooldown = Date.now() < cooldownUntil;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || onCooldown) return;
     setLoading(true);
     setError(null);
     try {
       await submitFeedback(user?.id || null, type, message.trim());
       setSent(true);
+      setCooldownUntil(Date.now() + 30_000);
     } catch (err) {
       console.error(err);
       setError('Something went wrong. Please try again.');
@@ -108,10 +112,10 @@ export default function FeedbackModal({ onClose }) {
                 <p className="text-[10px] text-gray-400 dark:text-gray-600">Submitted directly to the developer</p>
                 <button
                   type="submit"
-                  disabled={loading || !message.trim()}
+                  disabled={loading || !message.trim() || onCooldown}
                   className="px-5 py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
                 >
-                  {loading ? 'Sending…' : 'Send'}
+                  {loading ? 'Sending…' : onCooldown ? 'Sent' : 'Send'}
                 </button>
               </div>
             </form>

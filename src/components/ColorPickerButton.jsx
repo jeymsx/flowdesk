@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { HexColorPicker } from 'react-colorful';
 
@@ -53,9 +53,10 @@ export default function ColorPickerButton({ color, onChange, size = 'md', preset
     ? 'rounded-full hover:scale-110 transition-transform shrink-0'
     : 'rounded-full border-2 border-white dark:border-gray-700 shadow ring-1 ring-gray-200 dark:ring-gray-600 hover:scale-110 transition-transform shrink-0';
 
-  // Memoised on open/showCustom only — hex drag changes don't trigger getBoundingClientRect
-  const pos = useMemo(() => {
-    if (!open || !btnRef.current) return { top: 0, left: 0 };
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const calcPos = useCallback(() => {
+    if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     const popW = 192;
     const popH = showCustom ? 340 : 140;
@@ -63,9 +64,19 @@ export default function ColorPickerButton({ color, onChange, size = 'md', preset
     let top = r.bottom + 6;
     if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
     if (top + popH > window.innerHeight - 8) top = r.top - popH - 6;
-    return { top, left };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, showCustom]);
+    setPos({ top, left });
+  }, [showCustom]);
+
+  useEffect(() => {
+    if (!open) return;
+    calcPos();
+    window.addEventListener('scroll', calcPos, true);
+    window.addEventListener('resize', calcPos);
+    return () => {
+      window.removeEventListener('scroll', calcPos, true);
+      window.removeEventListener('resize', calcPos);
+    };
+  }, [open, calcPos]);
 
   return (
     <>

@@ -5,7 +5,8 @@ export async function fetchAllEvents(userId) {
     .from('events')
     .select('*')
     .eq('user_id', userId)
-    .order('start_date', { ascending: true });
+    .order('start_date', { ascending: true })
+    .limit(2000);
   if (error) throw error;
   return data ?? [];
 }
@@ -47,18 +48,19 @@ export async function createEvent(userId, title, startDate, endDate = null, colo
   return data;
 }
 
-export async function updateEvent(id, updates) {
+export async function updateEvent(id, updates, userId) {
   const { data, error } = await supabase
     .from('events')
     .update(updates)
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function deleteEvent(id) {
-  const { error } = await supabase.from('events').delete().eq('id', id);
+export async function deleteEvent(id, userId) {
+  const { error } = await supabase.from('events').delete().eq('id', id).eq('user_id', userId);
   if (error) throw error;
 }

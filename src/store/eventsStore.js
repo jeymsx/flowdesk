@@ -6,15 +6,18 @@ export const useEventsStore = create((set, get) => ({
   events: [],
   loading: false,
   _userId: null,
+  _loaded: false,
 
-  reset: () => set({ events: [], loading: false, _userId: null }),
+  reset: () => set({ events: [], loading: false, _userId: null, _loaded: false }),
 
   load: async (userId) => {
     if (!userId) return;
+    // Skip re-fetch if already loaded for this user
+    if (get()._userId === userId && get()._loaded) return;
     set({ loading: true, _userId: userId });
     try {
       const data = await fetchAllEvents(userId);
-      set({ events: data });
+      set({ events: data, _loaded: true });
     } catch (err) {
       console.error('Failed to load events:', err);
     } finally {
@@ -31,7 +34,7 @@ export const useEventsStore = create((set, get) => ({
   },
 
   updateEvent: async (id, updates) => {
-    const evt = await updateEvent(id, updates);
+    const evt = await updateEvent(id, updates, get()._userId);
     set((s) => ({
       events: s.events
         .map((e) => (e.id === id ? evt : e))
@@ -41,14 +44,16 @@ export const useEventsStore = create((set, get) => ({
   },
 
   deleteEvent: async (id) => {
-    await deleteEvent(id);
+    await deleteEvent(id, get()._userId);
     set((s) => ({ events: s.events.filter((e) => e.id !== id) }));
   },
 
-  // Rename a tag name across all events (optimistic + DB)
-  renameTagInEvents: (oldName, newName) => {
+  // Rename a tag name across all events (optimistic + DB, rolls back on any failure)
+  renameTagInEvents: async (oldName, newName) => {
+    const originalEvents = get().events;
+    const userId = get()._userId;
     const dbUpdates = [];
-    const newEvents = get().events.map((e) => {
+    const newEvents = originalEvents.map((e) => {
       if (!e.tags?.includes(oldName)) return e;
       const newTags = e.tags.map((t) => (t === oldName ? newName : t));
       dbUpdates.push({ id: e.id, newTags });
@@ -56,7 +61,13 @@ export const useEventsStore = create((set, get) => ({
     });
     if (!dbUpdates.length) return;
     set({ events: newEvents });
-    dbUpdates.forEach(({ id, newTags }) => updateEvent(id, { tags: newTags }).catch(console.error));
+    const results = await Promise.allSettled(
+      dbUpdates.map(({ id, newTags }) => updateEvent(id, { tags: newTags }, userId))
+    );
+    if (results.some((r) => r.status === 'rejected')) {
+      console.error('Failed to rename tag in some events; rolling back');
+      set({ events: originalEvents });
+    }
   },
 
   // Optimistic toggle for completed — instant UI, then confirm with server
@@ -72,16 +83,21 @@ export const useEventsStore = create((set, get) => ({
     }));
     if (shouldAwardXP) {
       const { awardXP, loaded } = useGamificationStore.getState();
-      if (loaded) awardXP(10, 'Task complete');
+      if (loaded) await awardXP('task_complete');
     }
     try {
       const updates = { completed: next };
       if (shouldAwardXP) updates.xp_awarded = true;
-      await updateEvent(id, updates);
+      await updateEvent(id, updates, get()._userId);
     } catch (err) {
       console.error(err);
+      // Roll back both completed state and xp_awarded flag
       set((s) => ({
-        events: s.events.map((e) => (e.id === id ? { ...e, completed: current } : e)),
+        events: s.events.map((e) =>
+          e.id === id
+            ? { ...e, completed: current, ...(shouldAwardXP ? { xp_awarded: false } : {}) }
+            : e
+        ),
       }));
     }
   },

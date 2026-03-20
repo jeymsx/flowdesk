@@ -74,9 +74,19 @@ function StreakSkeleton() {
   return (
     <div className="h-full flex flex-col p-3 gap-3">
       <SkeletonLine className="h-4 w-28 shrink-0" />
-      <div className="flex flex-col items-center gap-1.5 py-2 shrink-0">
-        <SkeletonBlock className="h-10 w-28 rounded-xl" />
-        <SkeletonLine className="h-3 w-20" />
+      <div className="flex items-center justify-around py-1 shrink-0">
+        <div className="flex flex-col items-center gap-1.5">
+          <SkeletonBlock className="h-8 w-14 rounded-lg" />
+          <SkeletonLine className="h-2.5 w-16" />
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <SkeletonBlock className="h-6 w-12 rounded-lg" />
+          <SkeletonLine className="h-2.5 w-16" />
+        </div>
+      </div>
+      <div className="shrink-0 space-y-1.5">
+        <SkeletonBlock className="h-5 w-full rounded-full" />
+        <SkeletonLine className="h-2.5 w-32 mx-auto" />
       </div>
       <div className="shrink-0 space-y-1.5">
         <SkeletonLine className="h-3 w-24" />
@@ -85,11 +95,6 @@ function StreakSkeleton() {
       <div className="flex gap-1 shrink-0">
         {Array.from({ length: 7 }).map((_, i) => (
           <SkeletonBlock key={i} className="flex-1 h-10 rounded-lg" />
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-2 shrink-0">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonBlock key={i} className="h-12 rounded-lg" />
         ))}
       </div>
     </div>
@@ -103,8 +108,7 @@ export default function StreakWidget() {
 
   useEffect(() => {
     if (userId) load(userId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, load]);
 
   const [statsOpen, setStatsOpen] = useState(false);
   const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
@@ -145,42 +149,77 @@ export default function StreakWidget() {
         </h3>
       </div>
 
-      {/* Current streak */}
-      <div className="flex flex-col items-center justify-center shrink-0">
-        <span className="text-4xl font-extrabold tabular-nums text-accent-500 leading-none">{streak}</span>
-        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 mt-1">
-          {streak === 1 ? 'day' : 'days'}
-        </span>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">current streak</span>
-        {streak === 0 && (
-          <span className="text-[10px] text-gray-400 dark:text-gray-600 mt-0.5">Complete a task to start one!</span>
-        )}
+      {/* Current + best streak side by side */}
+      <div className="flex items-center justify-around shrink-0 px-1">
+        <div className="flex flex-col items-center">
+          <div className="flex items-end gap-1">
+            <span className="text-3xl font-extrabold tabular-nums text-accent-500 leading-none">{streak}</span>
+            <span className={`text-lg leading-none mb-0.5 ${streak === 0 ? 'opacity-30' : ''}`}>🔥</span>
+          </div>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            {streak === 0 ? 'no streak yet' : 'current streak'}
+          </span>
+        </div>
+        <div className="w-px h-8 bg-gray-100 dark:bg-gray-800 shrink-0" />
+        <div className="flex flex-col items-center">
+          <div className="flex items-end gap-1">
+            <span className="text-xl font-extrabold tabular-nums text-gray-300 dark:text-gray-600 leading-none">{bestStreak}</span>
+            <span className="text-sm leading-none mb-0.5">🏆</span>
+          </div>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">personal best</span>
+        </div>
       </div>
 
-      {/* Streak milestone badges */}
-      {streak > 0 && (
-        <div className="flex justify-center gap-2 shrink-0">
-          {STREAK_MILESTONES.map(({ days, label }) => {
+      {/* Milestone progress track */}
+      <div className="shrink-0 px-0.5">
+        <div className="flex items-center gap-1">
+          {STREAK_MILESTONES.reduce((acc, { days, label }, i) => {
             const reached = streak >= days;
-            return (
-              <div
-                key={days}
-                title={reached ? `${label} unlocked!` : `${days - streak} more days to unlock`}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
-                  reached
-                    ? 'bg-yellow-400/15 dark:bg-yellow-400/10'
-                    : 'bg-gray-50 dark:bg-gray-800/50 opacity-50'
-                }`}
-              >
-                <span className="text-base leading-none">{reached ? '🏅' : '🔒'}</span>
-                <span className={`text-[9px] font-bold ${reached ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'}`}>
-                  {days}d
+            const nextDays = STREAK_MILESTONES[i + 1]?.days;
+            acc.push(
+              <div key={`dot-${days}`} className="flex flex-col items-center gap-0.5 shrink-0">
+                <div
+                  title={reached ? `${label} unlocked!` : `${days - streak} more days to unlock`}
+                  className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                    reached
+                      ? 'bg-yellow-400 shadow-sm shadow-yellow-400/40'
+                      : 'bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  <span className={`font-bold leading-none ${reached ? 'text-[8px] text-white' : 'text-[7px] text-gray-400'}`}>
+                    {days}
+                  </span>
+                </div>
+                <span className={`text-[8px] ${reached ? 'text-yellow-500' : 'text-gray-400 dark:text-gray-600'}`}>
+                  {reached ? '🏅' : 'd'}
                 </span>
               </div>
             );
-          })}
+            if (nextDays) {
+              acc.push(
+                <div key={`track-${days}`} className="flex-1 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  {reached && (
+                    <div
+                      className="h-full bg-accent-400 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, (streak - days) / (nextDays - days) * 100)}%` }}
+                    />
+                  )}
+                </div>
+              );
+            }
+            return acc;
+          }, [])}
         </div>
-      )}
+        {(() => {
+          const next = STREAK_MILESTONES.find((m) => m.days > streak);
+          if (!next) return <p className="text-[10px] text-yellow-500 font-semibold text-center mt-1.5">All milestones unlocked! 🏆</p>;
+          return (
+            <p className="text-[10px] text-accent-600 dark:text-accent-400 font-semibold text-center mt-1.5">
+              {next.days - streak} more day{next.days - streak !== 1 ? 's' : ''} to {next.days}-day badge 🏅
+            </p>
+          );
+        })()}
+      </div>
 
       {/* At-risk warning */}
       {streak > 0 && todayCompleted === 0 && (

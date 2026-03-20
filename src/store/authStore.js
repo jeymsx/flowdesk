@@ -5,15 +5,20 @@ import { useEventsStore } from './eventsStore';
 import { useBookmarksStore } from './bookmarksStore';
 import { useMilestonesStore } from './milestonesStore';
 import { useTagsStore } from './tagsStore';
+import { useProfileStore } from './profileStore';
+import { useGamificationStore } from './gamificationStore';
+import { useFocusStore } from './focusStore';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
   session: null,
   loading: true,
   _authSubscription: null,
+  _initializing: false,
 
   initialize: async () => {
-    if (get()._authSubscription) return;
+    if (get()._authSubscription || get()._initializing) return;
+    set({ _initializing: true });
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user ?? null;
     set({ session, user, loading: false });
@@ -43,9 +48,12 @@ export const useAuthStore = create((set, get) => ({
         useBookmarksStore.getState().reset();
         useMilestonesStore.getState().reset();
         useTagsStore.getState().reset();
+        useProfileStore.getState().reset();
+        useGamificationStore.getState().reset();
+        useFocusStore.getState().reset();
       }
     });
-    set({ _authSubscription: subscription });
+    set({ _authSubscription: subscription, _initializing: false });
   },
 
   signUp: async (email, password) => {

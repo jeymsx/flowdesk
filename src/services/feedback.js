@@ -8,10 +8,7 @@ export async function submitFeedback(userId, type, message) {
 }
 
 export async function getAllFeedback() {
-  const { data, error } = await supabase
-    .from('feedback')
-    .select('id, type, message, created_at, user_id, profiles(username)')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('get_admin_feedback');
   if (error) throw error;
   return data || [];
 }
