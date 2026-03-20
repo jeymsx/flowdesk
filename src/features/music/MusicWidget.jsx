@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useUIStore } from '../../store/uiStore';
 
 // Regular uploaded videos (not live streams) — swap IDs with any YouTube video ID you prefer
 const STATIONS = [
@@ -20,6 +21,7 @@ function extractYouTubeId(url) {
 }
 
 export default function MusicWidget() {
+  const setMusicActive = useUIStore((s) => s.setMusicActive);
   const [stationIdx, setStationIdx] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
@@ -40,6 +42,10 @@ export default function MusicWidget() {
     window.addEventListener('resize', calcCustomPos);
     return () => { window.removeEventListener('scroll', calcCustomPos, true); window.removeEventListener('resize', calcCustomPos); };
   }, [showCustomInput, calcCustomPos]);
+
+  // Sync music active state for the navigation guard
+  useEffect(() => { if (autoplay) setMusicActive(true); }, [autoplay, setMusicActive]);
+  useEffect(() => () => setMusicActive(false), [setMusicActive]);
 
   const isCustom = customId !== null && stationIdx === -1;
   const station = isCustom ? { id: customId, title: 'Custom', emoji: '🔗' } : STATIONS[stationIdx];

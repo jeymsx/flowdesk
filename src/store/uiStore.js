@@ -50,6 +50,12 @@ export const useUIStore = create((set) => ({
   focusRunning: false,
   setFocusRunning: (v) => set({ focusRunning: v }),
 
+  musicActive: false,
+  setMusicActive: (v) => set({ musicActive: v }),
+
+  leaveGuardPending: null,
+  setLeaveGuardPending: (dest) => set({ leaveGuardPending: dest }),
+
   isDemo: false,
   enterDemo: () => set({ isDemo: true }),
   exitDemo: () => set({ isDemo: false }),

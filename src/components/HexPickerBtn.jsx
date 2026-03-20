@@ -85,6 +85,7 @@ export default function HexPickerBtn({ color, onChange, size = 'md', presets = [
       {open && createPortal(
         <div
           ref={popRef}
+          onMouseDown={(e) => e.stopPropagation()}
           className="fixed z-[10000] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 w-48"
           style={pos}
         >
