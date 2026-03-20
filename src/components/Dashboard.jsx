@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useWidgetStore } from '../store/widgetStore';
-import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import WidgetCard from './WidgetCard';
@@ -46,22 +45,12 @@ function DashboardSkeleton() {
 }
 
 export default function Dashboard() {
-  const user = useAuthStore((s) => s.user);
   const isDemo = useUIStore((s) => s.isDemo);
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
-  const { layouts, initialized, loadLayout, onLayoutChange, setUserId, getVisibleWidgets, setDemoLayout } = useWidgetStore();
+  const { layouts, initialized, onLayoutChange, getVisibleWidgets } = useWidgetStore();
   const layoutLocked = useUIStore((s) => s.layoutLocked);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const visibleWidgets = getVisibleWidgets();
-
-  useEffect(() => {
-    if (isDemo) {
-      setDemoLayout();
-    } else if (user) {
-      setUserId(user.id);
-      loadLayout(user.id);
-    }
-  }, [user, isDemo, setUserId, loadLayout, setDemoLayout]);
 
   if (!initialized) return <DashboardSkeleton />;
 

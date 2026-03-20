@@ -81,35 +81,9 @@ function Favicon({ url, size = 16 }) {
 
 // ── Row (defined at module level to avoid remount bug) ─────────────────────
 
-function BookmarkRow({ b, isEditing, editForm, onEditChange, onSaveEdit, onCancelEdit, editSaving, onStartEdit, onDelete, onToggleFavorite, editFolders }) {
-  const INPUT = 'w-full px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent-500';
-
-  if (isEditing) {
-    return (
-      <div className="mx-1 mb-1 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-accent-500/30">
-        <form onSubmit={onSaveEdit} className="space-y-1.5">
-          <input value={editForm.url} onChange={(e) => onEditChange('url', e.target.value)} placeholder="URL" className={INPUT} />
-          <input value={editForm.title} onChange={(e) => onEditChange('title', e.target.value)} placeholder="Title" className={INPUT} />
-          <textarea value={editForm.annotation} onChange={(e) => onEditChange('annotation', e.target.value)} placeholder="Annotation (optional)" rows={2} className={`${INPUT} resize-none`} />
-          <input value={editForm.folder} onChange={(e) => onEditChange('folder', e.target.value)} list="bm-folders-edit" placeholder="Folder (optional)" className={INPUT} />
-          <datalist id="bm-folders-edit">
-            {editFolders.map((f) => <option key={f} value={f} />)}
-          </datalist>
-          <div className="flex gap-2 pt-0.5">
-            <button type="submit" disabled={editSaving} className="flex-1 py-1.5 text-xs font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white rounded-lg transition-colors">
-              {editSaving ? 'Saving…' : 'Save'}
-            </button>
-            <button type="button" onClick={onCancelEdit} className="flex-1 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
+function BookmarkRow({ b, isEditing, onStartEdit, onDelete, onToggleFavorite }) {
   return (
-    <div className="group flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+    <div className={`group flex items-start gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${isEditing ? 'bg-accent-500/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
       <div className="mt-0.5 shrink-0"><Favicon url={b.url} size={15} /></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -135,7 +109,7 @@ function BookmarkRow({ b, isEditing, editForm, onEditChange, onSaveEdit, onCance
           title={b.favorite ? 'Unstar' : 'Star'}>
           <StarIcon filled={b.favorite} />
         </button>
-        <button onClick={() => onStartEdit(b)} className="p-1 text-gray-400 hover:text-accent-500 rounded transition-colors" title="Edit">
+        <button onClick={(e) => onStartEdit(b, e.currentTarget)} className="p-1 text-gray-400 hover:text-accent-500 rounded transition-colors" title="Edit">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
@@ -150,35 +124,9 @@ function BookmarkRow({ b, isEditing, editForm, onEditChange, onSaveEdit, onCance
   );
 }
 
-function BookmarkCard({ b, isEditing, editForm, onEditChange, onSaveEdit, onCancelEdit, editSaving, onStartEdit, onDelete, onToggleFavorite, editFolders }) {
-  const INPUT = 'w-full px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent-500';
-
-  if (isEditing) {
-    return (
-      <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-accent-500/30">
-        <form onSubmit={onSaveEdit} className="space-y-1.5">
-          <input value={editForm.url} onChange={(e) => onEditChange('url', e.target.value)} placeholder="URL" className={INPUT} />
-          <input value={editForm.title} onChange={(e) => onEditChange('title', e.target.value)} placeholder="Title" className={INPUT} />
-          <textarea value={editForm.annotation} onChange={(e) => onEditChange('annotation', e.target.value)} placeholder="Annotation (optional)" rows={2} className={`${INPUT} resize-none`} />
-          <input value={editForm.folder} onChange={(e) => onEditChange('folder', e.target.value)} list="bm-folders-edit" placeholder="Folder (optional)" className={INPUT} />
-          <datalist id="bm-folders-edit">
-            {editFolders.map((f) => <option key={f} value={f} />)}
-          </datalist>
-          <div className="flex gap-2 pt-0.5">
-            <button type="submit" disabled={editSaving} className="flex-1 py-1.5 text-xs font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white rounded-lg transition-colors">
-              {editSaving ? 'Saving…' : 'Save'}
-            </button>
-            <button type="button" onClick={onCancelEdit} className="flex-1 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
+function BookmarkCard({ b, isEditing, onStartEdit, onDelete, onToggleFavorite }) {
   return (
-    <div className="group flex flex-col gap-2 p-3 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 hover:border-accent-500/40 hover:shadow-sm transition-all">
+    <div className={`group flex flex-col gap-2 p-3 rounded-xl border transition-all ${isEditing ? 'border-accent-500/40 bg-accent-500/5' : 'bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-accent-500/40 hover:shadow-sm'}`}>
       <div className="flex items-start gap-2 min-w-0">
         <Favicon url={b.url} size={18} />
         <div className="flex-1 min-w-0">
@@ -204,7 +152,7 @@ function BookmarkCard({ b, isEditing, editForm, onEditChange, onSaveEdit, onCanc
             title={b.favorite ? 'Unstar' : 'Star'}>
             <StarIcon filled={b.favorite} />
           </button>
-          <button onClick={() => onStartEdit(b)} className="p-1 text-gray-400 hover:text-accent-500 rounded transition-colors" title="Edit">
+          <button onClick={(e) => onStartEdit(b, e.currentTarget)} className="p-1 text-gray-400 hover:text-accent-500 rounded transition-colors" title="Edit">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
@@ -248,10 +196,11 @@ export default function BookmarksWidget() {
   const [addSaving, setAddSaving] = useState(false);
   const addBtnRef = useRef(null);
 
-  // Edit
+  // Edit popover
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ url: '', title: '', annotation: '', folder: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [editAnchorRect, setEditAnchorRect] = useState(null);
 
   // Delete confirm
   const [confirmId, setConfirmId] = useState(null);
@@ -293,9 +242,10 @@ export default function BookmarksWidget() {
     }
   };
 
-  const startEdit = (b) => {
+  const startEdit = (b, anchorEl) => {
     setEditId(b.id);
     setEditForm({ url: b.url, title: b.title, annotation: b.annotation || '', folder: b.folder || '' });
+    setEditAnchorRect(anchorEl ? anchorEl.getBoundingClientRect() : null);
     setShowAdd(false);
   };
 
@@ -331,24 +281,25 @@ export default function BookmarksWidget() {
   const rowProps = (b) => ({
     b,
     isEditing: editId === b.id,
-    editForm,
-    onEditChange: handleEditChange,
-    onSaveEdit: handleSaveEdit,
-    onCancelEdit: () => setEditId(null),
-    editSaving,
     onStartEdit: startEdit,
     onDelete: (id) => setConfirmId(id),
     onToggleFavorite: toggleFavorite,
-    editFolders: folders,
   });
 
-  // ── Popover position ───────────────────────────────────────────────────────
+  // ── Popover positions ──────────────────────────────────────────────────────
 
   const popoverPos = () => {
     const r = addBtnRef.current?.getBoundingClientRect();
     if (!r) return { left: 100, top: 100 };
     const left = Math.min(r.right - 320, window.innerWidth - 328);
     const top = Math.min(r.bottom + 8, window.innerHeight - 460);
+    return { left: Math.max(8, left), top: Math.max(8, top) };
+  };
+
+  const editPopoverPos = () => {
+    if (!editAnchorRect) return { left: 100, top: 100 };
+    const left = Math.min(editAnchorRect.right - 320, window.innerWidth - 328);
+    const top = Math.min(editAnchorRect.bottom + 8, window.innerHeight - 420);
     return { left: Math.max(8, left), top: Math.max(8, top) };
   };
 
@@ -465,6 +416,44 @@ export default function BookmarksWidget() {
                   className="w-full py-2 text-sm font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white rounded-xl transition-colors"
                 >
                   {addSaving ? 'Saving…' : 'Add Bookmark'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit popover */}
+      {editId && createPortal(
+        <div className="fixed inset-0 z-[9990]" onClick={() => setEditId(null)}>
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
+            style={editPopoverPos()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Edit Bookmark</h4>
+                <button onClick={() => setEditId(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleSaveEdit} className="space-y-2.5">
+                <input autoFocus value={editForm.url} onChange={(e) => handleEditChange('url', e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setEditId(null)} placeholder="https://example.com" className={INPUT_CLS} />
+                <input value={editForm.title} onChange={(e) => handleEditChange('title', e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setEditId(null)} placeholder="Title (optional — defaults to domain)" className={INPUT_CLS} />
+                <textarea value={editForm.annotation} onChange={(e) => handleEditChange('annotation', e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setEditId(null)} placeholder="Annotation (optional)" rows={2} className={`${INPUT_CLS} resize-none`} />
+                <div>
+                  <input value={editForm.folder} onChange={(e) => handleEditChange('folder', e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setEditId(null)} list="bm-folders-edit" placeholder="Folder (optional)" className={INPUT_CLS} />
+                  <datalist id="bm-folders-edit">
+                    {folders.map((f) => <option key={f} value={f} />)}
+                  </datalist>
+                </div>
+                <button type="submit" disabled={editSaving} className="w-full py-2 text-sm font-semibold bg-accent-500 hover:bg-accent-600 disabled:opacity-50 text-white rounded-xl transition-colors">
+                  {editSaving ? 'Saving…' : 'Save Changes'}
                 </button>
               </form>
             </div>

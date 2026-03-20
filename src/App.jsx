@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
+import { useWidgetStore } from './store/widgetStore';
 import { useProfileStore } from './store/profileStore';
 import { useGamificationStore } from './store/gamificationStore';
 import XPToastManager from './components/gamification/XPToast';
@@ -16,6 +17,12 @@ import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './components/Dashboard';
 import UsernameModal from './components/UsernameModal';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
 function applyDarkMode(darkMode) {
   document.documentElement.classList.toggle('dark', darkMode);
@@ -36,11 +43,13 @@ function removeDarkMode() {
 
 function DemoShell() {
   const { enterDemo, exitDemo, darkMode } = useUIStore();
+  const setDemoLayout = useWidgetStore((s) => s.setDemoLayout);
 
   useEffect(() => {
     enterDemo();
+    setDemoLayout();
     return () => exitDemo();
-  }, [enterDemo, exitDemo]);
+  }, [enterDemo, exitDemo, setDemoLayout]);
 
   useEffect(() => {
     applyDarkMode(darkMode);
@@ -104,6 +113,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <XPToastManager />
       <Routes>
         <Route path="/" element={<LandingPage />} />

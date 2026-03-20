@@ -110,6 +110,9 @@ export default function NotesWidget() {
   };
 
   const handleCreate = async () => {
+    // If a blank note already exists, open it instead of creating another
+    const blank = notes.find((n) => !n.title && !n.content && !(n.tags?.length));
+    if (blank) { openNote(blank); return; }
     try {
       const note = await createNote(userId, '', '', []);
       setNotes((prev) => [note, ...prev]);

@@ -48,25 +48,25 @@ export default function ClockWidget() {
   const [showAnalog, setShowAnalog] = useState(
     () => localStorage.getItem('clock-show-analog') !== 'false'
   );
-  const setWidgetHeight = useWidgetStore((s) => s.setWidgetHeight);
+  const { setWidgetHeight, layouts } = useWidgetStore((s) => ({ setWidgetHeight: s.setWidgetHeight, layouts: s.layouts }));
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    setWidgetHeight('clock-1', showAnalog ? 5 : 3);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const toggleAnalog = () => {
-    setShowAnalog((v) => {
-      const next = !v;
-      localStorage.setItem('clock-show-analog', String(next));
-      setWidgetHeight('clock-1', next ? 5 : 3);
-      return next;
-    });
+    const next = !showAnalog;
+    localStorage.setItem('clock-show-analog', String(next));
+    if (!next) {
+      // Switching to digital-only: shrink to compact height
+      setWidgetHeight('clock-1', 3);
+    } else {
+      // Switching to analog: only grow if current height is too short to show the face
+      const currentH = layouts.lg?.find((item) => item.i === 'clock-1')?.h ?? 0;
+      if (currentH < 5) setWidgetHeight('clock-1', 5);
+    }
+    setShowAnalog(next);
   };
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;

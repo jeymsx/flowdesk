@@ -109,8 +109,10 @@ export const useWidgetStore = create((set, get) => ({
   _userId: null,
 
   loadLayout: async (userId) => {
+    // Skip if already initialized for this user (prevents reload on token refresh)
+    if (get().initialized && get()._userId === userId) return;
     // Reset first so stale data from a previous session is never shown
-    set({ initialized: false });
+    set({ initialized: false, _userId: userId });
     try {
       const saved = await fetchLayout(userId);
       if (saved) {
@@ -128,6 +130,19 @@ export const useWidgetStore = create((set, get) => ({
     } catch {
       set({ initialized: true });
     }
+  },
+
+  reset: () => {
+    clearTimeout(saveTimeout);
+    set({
+      visibleWidgetIds: DEFAULT_VISIBLE,
+      layouts: DEFAULT_LAYOUTS,
+      savedLayouts: [],
+      activeSavedLayoutId: null,
+      taskOrder: [],
+      initialized: false,
+      _userId: null,
+    });
   },
 
   onLayoutChange: (_currentLayout, allLayouts) => {
@@ -243,6 +258,14 @@ export const useWidgetStore = create((set, get) => ({
     set({ taskOrder: order });
     const userId = get()._userId;
     if (userId) persistTaskOrder(userId, order).catch(() => {});
+  },
+
+  flushLayout: () => {
+    const userId = get()._userId;
+    if (!userId) return;
+    clearTimeout(saveTimeout);
+    const { layouts, visibleWidgetIds, activeSavedLayoutId } = get();
+    saveLayout(userId, layouts, visibleWidgetIds, activeSavedLayoutId).catch(() => {});
   },
 
   getVisibleWidgets: () => {

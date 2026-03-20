@@ -9,6 +9,7 @@ import { useEventsStore } from '../store/eventsStore';
 import { useTagsStore } from '../store/tagsStore';
 import { useGamificationStore, computeLevel, getLevelTitle } from '../store/gamificationStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { RELEASES, COLOR_MAP, DOT_MAP } from '../data/changelog';
 import ConfirmModal from '../components/ConfirmModal';
 import TagSelector from '../components/TagSelector';
 import DemoSignupPrompt from '../components/DemoSignupPrompt';
@@ -105,7 +106,7 @@ export default function Sidebar() {
   const [quickColor, setQuickColor] = useState(EVENT_COLORS[0]);
   const [quickTags, setQuickTags] = useState([]);
   const [quickLoading, setQuickLoading] = useState(false);
-  const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -116,7 +117,6 @@ export default function Sidebar() {
   const levelTitle = getLevelTitle(level);
   const saveInputRef = useRef(null);
   const addTaskBtnRef = useRef(null);
-  const whatsNewBtnRef = useRef(null);
 
   const today = toDateStr(new Date());
   const todayEvents = events.filter((e) => {
@@ -703,65 +703,75 @@ export default function Sidebar() {
         )}
 
 
-        {/* What's New Popover */}
-        {showWhatsNew && createPortal(
-          <div className="fixed inset-0 z-[9990]" onClick={() => setShowWhatsNew(false)}>
+        {/* Changelog right-side drawer */}
+        {showChangelog && createPortal(
+          <div className="fixed inset-0 z-[9990] flex justify-end" onClick={() => setShowChangelog(false)}>
             <div
-              className="absolute bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-80 overflow-hidden"
-              style={{
-                left: sidebarOpen ? 248 : 68,
-                top: Math.min(
-                  whatsNewBtnRef.current ? whatsNewBtnRef.current.getBoundingClientRect().top - 8 : 300,
-                  window.innerHeight - 480
-                ),
-              }}
+              className="relative h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800 flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600" />
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">What&apos;s New</h4>
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-500/10 text-accent-600 dark:text-accent-400">v1.1.0</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">March 20, 2026 · Gamification update</p>
-                  </div>
-                  <button
-                    onClick={() => setShowWhatsNew(false)}
-                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors shrink-0"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+              {/* Accent bar */}
+              <div className="h-1 w-full bg-gradient-to-r from-accent-400 to-accent-600 shrink-0" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900 dark:text-white">Changelog</h2>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Every update shipped to FlowDesk</p>
                 </div>
-                <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                  {[
-                    'XP & Levels — earn XP for tasks, focus sessions, and streaks',
-                    'Daily Challenges — 3 rotating goals each day for bonus XP',
-                    'Streak milestones — unlock badges at 7, 30, and 100 days',
-                    'Leaderboard — see how you rank against other users',
-                    'Demo mode — try the full dashboard without signing up',
-                    'Focus Timer pop-out — draggable mini-timer stays visible anywhere',
-                    'Send Feedback — report bugs or suggest improvements',
-                    'Edit task popover redesigned — more space, cleaner layout',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <svg className="w-3 h-3 mt-0.5 shrink-0 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                  <button
-                    onClick={() => { setShowWhatsNew(false); navigate('/changelog'); }}
-                    className="text-xs font-medium text-accent-500 hover:text-accent-600 transition-colors"
-                  >
-                    View full changelog →
-                  </button>
+                <button
+                  onClick={() => setShowChangelog(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable timeline */}
+              <div className="flex-1 overflow-y-auto px-5 py-5">
+                <div className="relative">
+                  <div className="absolute left-[6px] top-2 bottom-0 w-px bg-gray-200 dark:bg-gray-800" />
+                  <div className="space-y-0">
+                    {RELEASES.map((release, idx) => (
+                      <div key={release.version} className={`relative pl-7 pb-8 ${idx > 0 ? 'pt-8 mt-0 border-t border-gray-100 dark:border-gray-800' : ''}`}>
+                        <div className={`absolute left-0 w-3 h-3 rounded-full bg-accent-500 ring-4 ring-white dark:ring-gray-900 ${idx > 0 ? 'top-[33px]' : 'top-1'}`} />
+
+                        {/* Release header */}
+                        <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">v{release.version}</span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent-500/10 text-accent-600 dark:text-accent-400 border border-accent-500/20">
+                            {release.label}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-2">{release.date}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">{release.description}</p>
+
+                        {/* Sections */}
+                        <div className="space-y-4">
+                          {release.sections.map((section) => (
+                            <div key={section.title}>
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border mb-2 ${COLOR_MAP[section.color]}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_MAP[section.color]}`} />
+                                {section.title}
+                              </span>
+                              <ul className="space-y-1.5 pl-0.5">
+                                {section.items.map((item, i) => (
+                                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                    <svg className="w-3 h-3 mt-0.5 shrink-0 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -804,8 +814,7 @@ export default function Sidebar() {
           <>
             {/* What's New */}
             <button
-              ref={whatsNewBtnRef}
-              onClick={() => setShowWhatsNew(true)}
+              onClick={() => setShowChangelog(true)}
               title={!sidebarOpen ? "What's new" : undefined}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
             >
@@ -815,7 +824,7 @@ export default function Sidebar() {
               {sidebarOpen && (
                 <span className="flex items-center gap-2 flex-1">
                   What&apos;s new
-                  <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-accent-500 text-white leading-none">v1.1</span>
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-accent-500 text-white leading-none">v1.2</span>
                 </span>
               )}
             </button>

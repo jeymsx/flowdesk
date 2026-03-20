@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
 import { getAdminUserStats, getAdminFeedbackStats } from '../services/admin';
 import { deleteFeedback } from '../services/feedback';
 import {
@@ -75,6 +76,16 @@ export default function AdminPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const isAdmin = user?.id === ADMIN_UID;
+  const darkMode = useUIStore((s) => s.darkMode);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    document.documentElement.style.backgroundColor = darkMode ? '#0f172a' : '#f9fafb';
+    return () => {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.backgroundColor = '#f9fafb';
+    };
+  }, [darkMode]);
 
   const [userStats, setUserStats] = useState(null);
   const [feedbackStats, setFeedbackStats] = useState(null);
