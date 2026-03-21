@@ -56,6 +56,14 @@ export const useAuthStore = create((set, get) => ({
     set({ _authSubscription: subscription, _initializing: false });
   },
 
+  cleanup: () => {
+    const sub = get()._authSubscription;
+    if (sub) {
+      sub.unsubscribe();
+      set({ _authSubscription: null, _initializing: false });
+    }
+  },
+
   signUp: async (email, password) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
@@ -83,8 +91,8 @@ export const useAuthStore = create((set, get) => ({
 
   signOut: async () => {
     const userId = get().user?.id;
-    // Flush any pending layout save before signing out
-    useWidgetStore.getState().flushLayout();
+    // Flush any pending layout save before signing out so the last position is never lost
+    await useWidgetStore.getState().flushLayout();
     await supabase.auth.signOut();
     // Clean up any legacy localStorage note key from the old encryption scheme
     if (userId) localStorage.removeItem(`fd_nk_${userId}`);

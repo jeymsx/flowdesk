@@ -87,15 +87,38 @@ function findAvailableSpot(items, w, h, cols) {
 }
 
 let saveTimeout = null;
+let _saveInFlight = false;
+let _saveQueued = false;
+
+async function executeSave(get) {
+  if (_saveInFlight) {
+    // Another save is running — mark that the latest state still needs saving.
+    // When the in-flight save finishes, it will pick up the newest state.
+    _saveQueued = true;
+    return;
+  }
+  const userId = get()._userId;
+  if (!userId) return;
+  _saveInFlight = true;
+  _saveQueued = false;
+  try {
+    const { layouts, visibleWidgetIds, activeSavedLayoutId } = get();
+    await saveLayout(userId, layouts, visibleWidgetIds, activeSavedLayoutId);
+  } catch {
+    // swallow — non-critical background save
+  } finally {
+    _saveInFlight = false;
+    // If another layout change happened while we were in-flight, save once more
+    // using the latest state (never the stale snapshot from the previous call).
+    if (_saveQueued) executeSave(get);
+  }
+}
 
 function persistLayout(get) {
   const userId = get()._userId;
   if (!userId) return;
   clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    const { layouts, visibleWidgetIds, activeSavedLayoutId } = get();
-    saveLayout(userId, layouts, visibleWidgetIds, activeSavedLayoutId).catch(() => {});
-  }, 800);
+  saveTimeout = setTimeout(() => executeSave(get), 800);
 }
 
 export const useWidgetStore = create((set, get) => ({
@@ -134,6 +157,8 @@ export const useWidgetStore = create((set, get) => ({
 
   reset: () => {
     clearTimeout(saveTimeout);
+    _saveInFlight = false;
+    _saveQueued = false;
     set({
       visibleWidgetIds: DEFAULT_VISIBLE,
       layouts: DEFAULT_LAYOUTS,
@@ -262,10 +287,12 @@ export const useWidgetStore = create((set, get) => ({
 
   flushLayout: () => {
     const userId = get()._userId;
-    if (!userId) return;
+    if (!userId) return Promise.resolve();
     clearTimeout(saveTimeout);
+    _saveInFlight = false;
+    _saveQueued = false;
     const { layouts, visibleWidgetIds, activeSavedLayoutId } = get();
-    saveLayout(userId, layouts, visibleWidgetIds, activeSavedLayoutId).catch(() => {});
+    return saveLayout(userId, layouts, visibleWidgetIds, activeSavedLayoutId).catch(() => {});
   },
 
   getVisibleWidgets: () => {

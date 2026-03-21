@@ -114,10 +114,12 @@ function AdminGate() {
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
+  const cleanup = useAuthStore((s) => s.cleanup);
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    return () => cleanup();
+  }, [initialize, cleanup]);
 
   return (
     <BrowserRouter>
@@ -125,20 +127,18 @@ export default function App() {
       <ScrollToTop />
       <XPToastManager />
       <ErrorBoundary>
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/app" element={<AppShell />} />
-            <Route path="/demo" element={<DemoShell />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/changelog" element={<ChangelogPage />} />
-            <Route path="/admin" element={<AdminGate />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+        <Routes>
+          <Route path="/" element={<Suspense fallback={<LoadingScreen />}><LandingPage /></Suspense>} />
+          <Route path="/login" element={<Suspense fallback={<LoadingScreen />}><Login /></Suspense>} />
+          <Route path="/signup" element={<Suspense fallback={<LoadingScreen />}><Signup /></Suspense>} />
+          <Route path="/app" element={<AppShell />} />
+          <Route path="/demo" element={<DemoShell />} />
+          <Route path="/terms" element={<Suspense fallback={<LoadingScreen />}><TermsPage /></Suspense>} />
+          <Route path="/privacy" element={<Suspense fallback={<LoadingScreen />}><PrivacyPage /></Suspense>} />
+          <Route path="/changelog" element={<Suspense fallback={<LoadingScreen />}><ChangelogPage /></Suspense>} />
+          <Route path="/admin" element={<Suspense fallback={<LoadingScreen />}><AdminGate /></Suspense>} />
+          <Route path="*" element={<Suspense fallback={<LoadingScreen />}><NotFoundPage /></Suspense>} />
+        </Routes>
       </ErrorBoundary>
     </BrowserRouter>
   );

@@ -179,3 +179,36 @@ create policy "Authenticated users can submit feedback" on public.feedback
 create policy "Users can read own feedback" on public.feedback
   for select
   using (auth.uid() = user_id);
+
+-- events
+alter table public.events enable row level security;
+create policy "Users can CRUD own events" on public.events
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- layouts
+alter table public.layouts enable row level security;
+create policy "Users can CRUD own layouts" on public.layouts
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- milestones
+alter table public.milestones enable row level security;
+create policy "Users can CRUD own milestones" on public.milestones
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- notes
+alter table public.notes enable row level security;
+create policy "Users can CRUD own notes" on public.notes
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- profiles (id IS the auth.uid — no separate user_id column)
+alter table public.profiles enable row level security;
+create policy "Users can read own profile" on public.profiles
+  for select using (auth.uid() = id);
+create policy "Users can insert own profile" on public.profiles
+  for insert with check (auth.uid() = id);
+create policy "Users can update own profile" on public.profiles
+  for update using (auth.uid() = id) with check (auth.uid() = id);
