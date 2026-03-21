@@ -329,7 +329,7 @@ function CalendarGrid({ weeks, events, onDayClick }) {
 
 // ── Fullscreen overlay (portal) ───────────────────────────────────────────────
 
-function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, onPrev, onNext, onClose, onAddEvent, onDeleteEvent, onUpdateEvent }) {
+function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, onPrev, onNext, onClose, onGoToToday, onAddEvent, onDeleteEvent, onUpdateEvent }) {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
   const [addTitle, setAddTitle] = useState('');
@@ -434,8 +434,8 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
           onCancel={() => setConfirmEvt(null)}
         />
       )}
-    <div className="fixed inset-0 z-[9980] bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl h-full max-h-[92vh] flex bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[9980] bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-6xl h-full max-h-[92vh] flex bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
 
         {/* ── Left: Calendar grid ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -447,7 +447,12 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
               </svg>
               <span className="text-xl font-bold text-gray-900 dark:text-white">{monthLabel}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              {!(year === new Date().getFullYear() && month === new Date().getMonth()) && (
+                <button onClick={onGoToToday} className="px-2.5 py-1 text-xs font-semibold rounded-full bg-accent-500/10 text-accent-600 dark:text-accent-400 hover:bg-accent-500/20 transition-colors">
+                  Today
+                </button>
+              )}
               <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
               </button>
@@ -596,13 +601,6 @@ function FullscreenCalendar({ year, month, weeks, events, loading, monthLabel, o
                 className="flex-1 py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 {adding ? '…' : '+ Add'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAddTitle(''); setAddDesc(''); setAddEndDate(''); setAddColor(EVENT_COLORS[0]); setAddTags([]); }}
-                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
               </button>
             </div>
           </form>
@@ -807,6 +805,7 @@ export default function CalendarWidget() {
           monthLabel={monthLabel}
           onPrev={prevMonth}
           onNext={nextMonth}
+          onGoToToday={goToToday}
           onClose={() => setIsFullscreen(false)}
           onAddEvent={handleAddEvent}
           onDeleteEvent={handleDelete}
