@@ -91,8 +91,11 @@ export const useAuthStore = create((set, get) => ({
 
   signOut: async () => {
     const userId = get().user?.id;
-    // Flush any pending layout save before signing out so the last position is never lost
-    await useWidgetStore.getState().flushLayout();
+    // Flush pending saves before signing out so in-flight debounced data isn't lost.
+    await Promise.all([
+      useWidgetStore.getState().flushLayout(),
+      useGamificationStore.getState().flushGamification(),
+    ]);
     await supabase.auth.signOut();
     // Clean up any legacy localStorage note key from the old encryption scheme
     if (userId) localStorage.removeItem(`fd_nk_${userId}`);

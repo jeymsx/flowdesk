@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchAllEvents, createEvent, updateEvent, deleteEvent } from '../services/events';
+import { fetchAllEvents, createEvent, updateEvent, deleteEvent, renameTagInEvents as renameTagRpc } from '../services/events';
 import { useGamificationStore } from './gamificationStore';
 
 export const useEventsStore = create((set, get) => ({
@@ -52,20 +52,20 @@ export const useEventsStore = create((set, get) => ({
   renameTagInEvents: async (oldName, newName) => {
     const originalEvents = get().events;
     const userId = get()._userId;
-    const dbUpdates = [];
+    // Optimistic update
+    let changed = false;
     const newEvents = originalEvents.map((e) => {
       if (!e.tags?.includes(oldName)) return e;
-      const newTags = e.tags.map((t) => (t === oldName ? newName : t));
-      dbUpdates.push({ id: e.id, newTags });
-      return { ...e, tags: newTags };
+      changed = true;
+      return { ...e, tags: e.tags.map((t) => (t === oldName ? newName : t)) };
     });
-    if (!dbUpdates.length) return;
+    if (!changed) return;
     set({ events: newEvents });
-    const results = await Promise.allSettled(
-      dbUpdates.map(({ id, newTags }) => updateEvent(id, { tags: newTags }, userId))
-    );
-    if (results.some((r) => r.status === 'rejected')) {
-      console.error('Failed to rename tag in some events; rolling back');
+    try {
+      // Single server-side UPDATE instead of N parallel calls
+      await renameTagRpc(userId, oldName, newName);
+    } catch (err) {
+      console.error('Failed to rename tag in events; rolling back', err);
       set({ events: originalEvents });
     }
   },

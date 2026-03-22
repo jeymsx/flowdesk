@@ -24,6 +24,7 @@ const PrivacyPage    = lazy(() => import('./components/PrivacyPage'));
 const ChangelogPage  = lazy(() => import('./components/ChangelogPage'));
 const AdminPage      = lazy(() => import('./components/AdminPage'));
 const NotFoundPage   = lazy(() => import('./components/NotFoundPage'));
+const FAQPage        = lazy(() => import('./components/FAQPage'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -136,6 +137,7 @@ export default function App() {
           <Route path="/terms" element={<Suspense fallback={<LoadingScreen />}><TermsPage /></Suspense>} />
           <Route path="/privacy" element={<Suspense fallback={<LoadingScreen />}><PrivacyPage /></Suspense>} />
           <Route path="/changelog" element={<Suspense fallback={<LoadingScreen />}><ChangelogPage /></Suspense>} />
+          <Route path="/faq" element={<Suspense fallback={<LoadingScreen />}><FAQPage /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<LoadingScreen />}><AdminGate /></Suspense>} />
           <Route path="*" element={<Suspense fallback={<LoadingScreen />}><NotFoundPage /></Suspense>} />
         </Routes>

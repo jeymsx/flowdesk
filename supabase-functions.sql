@@ -9,7 +9,7 @@
 -- Already added in supabase-schema.sql. Included here for reference.
 -- =============================================================================
 
-CREATE OR REPLACE FUNCTION public.get_leaderboard(p_limit int DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.get_leaderboard(p_limit int DEFAULT 50, p_offset int DEFAULT 0)
 RETURNS TABLE(id uuid, username text, xp int)
 LANGUAGE sql SECURITY DEFINER
 AS $$
@@ -19,7 +19,7 @@ AS $$
     AND username IS NOT NULL
     AND (gamification->>'xp')::int > 0
   ORDER BY (gamification->>'xp')::int DESC
-  LIMIT p_limit;
+  LIMIT p_limit OFFSET p_offset;
 $$;
 
 
@@ -148,6 +148,30 @@ BEGIN
   RETURN v_amount;
 END;
 $$;
+
+
+-- =============================================================================
+-- TAG RENAME (batch update — replaces N client-side UPDATE calls)
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION rename_tag_in_events(
+  p_user_id UUID,
+  p_old_tag  TEXT,
+  p_new_tag  TEXT
+)
+RETURNS VOID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE events
+  SET tags = array_replace(tags, p_old_tag, p_new_tag)
+  WHERE user_id = p_user_id
+    AND p_old_tag = ANY(tags);
+$$;
+
+-- Grant execute to authenticated users (RLS on events table still applies via SECURITY DEFINER)
+GRANT EXECUTE ON FUNCTION rename_tag_in_events(UUID, TEXT, TEXT) TO authenticated;
 
 
 -- =============================================================================

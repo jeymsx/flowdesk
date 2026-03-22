@@ -140,7 +140,7 @@ create index if not exists user_tags_user_id_idx
 -- Leaderboard RPC: sorts and limits inside Postgres so the client never
 -- receives a full table dump. Run with SECURITY DEFINER so RLS is bypassed
 -- for this read-only, non-sensitive aggregation.
-CREATE OR REPLACE FUNCTION public.get_leaderboard(p_limit int DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.get_leaderboard(p_limit int DEFAULT 50, p_offset int DEFAULT 0)
 RETURNS TABLE(id uuid, username text, xp int)
 LANGUAGE sql SECURITY DEFINER
 AS $$
@@ -150,7 +150,7 @@ AS $$
     AND username IS NOT NULL
     AND (gamification->>'xp')::int > 0
   ORDER BY (gamification->>'xp')::int DESC
-  LIMIT p_limit;
+  LIMIT p_limit OFFSET p_offset;
 $$;
 
 -- =========================

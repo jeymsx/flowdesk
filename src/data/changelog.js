@@ -1,5 +1,44 @@
 export const RELEASES = [
   {
+    version: '2.1.0',
+    label: 'Smarter XP & Daily Fixes',
+    date: 'March 22, 2026',
+    description: 'Leveling up now takes real effort — XP requirements grow as you rank up. Daily challenges reset at the right time for every timezone, the fullscreen timer gets a keyboard shortcut, and a new FAQ page answers the most common questions.',
+    sections: [
+      {
+        title: 'Gamification',
+        color: 'yellow',
+        items: [
+          'XP curve is now incremental — each level requires 50 more XP than the last. Level 1→2 costs 100 XP, 2→3 costs 150 XP, and so on. Early levels are quick; higher ranks take real dedication.',
+          'Daily challenges now reset at local midnight — they refresh when your day ends, not at a fixed UTC time.',
+        ],
+      },
+      {
+        title: 'Focus Timer',
+        color: 'accent',
+        items: [
+          'Press Space to pause or resume the timer while in fullscreen mode.',
+          'Keyboard hints (Space and ESC) are shown at the bottom of the fullscreen view.',
+        ],
+      },
+      {
+        title: 'New',
+        color: 'blue',
+        items: [
+          'FAQ page added — answers to the most common questions about FlowDesk, account management, widgets, and privacy.',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        color: 'gray',
+        items: [
+          'XP earned in the last moments before signing out is no longer lost — a final save is flushed before the session ends.',
+          'Layout position is saved exactly once after you finish dragging or resizing a widget, not on every frame during the drag.',
+        ],
+      },
+    ],
+  },
+  {
     version: '2.0.0',
     label: 'Widgets, Stability & UX',
     date: 'March 21, 2026',

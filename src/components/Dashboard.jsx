@@ -49,11 +49,12 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const isDemo = useUIStore((s) => s.isDemo);
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
-  const { layouts, initialized, onLayoutChange, allWidgets, visibleWidgetIds } = useWidgetStore(
+  const { layouts, initialized, onLayoutChange, onDragResizeStop, allWidgets, visibleWidgetIds } = useWidgetStore(
     useShallow((s) => ({
       layouts: s.layouts,
       initialized: s.initialized,
       onLayoutChange: s.onLayoutChange,
+      onDragResizeStop: s.onDragResizeStop,
       allWidgets: s.allWidgets,
       visibleWidgetIds: s.visibleWidgetIds,
     }))
@@ -101,6 +102,8 @@ export default function Dashboard() {
           cols={{ lg: 12, md: 10, sm: 6, xs: 4 }}
           rowHeight={56}
           onLayoutChange={onLayoutChange}
+          onDragStop={onDragResizeStop}
+          onResizeStop={onDragResizeStop}
           draggableHandle=".drag-handle"
           isDraggable={!layoutLocked && !isDemo}
           isResizable={!layoutLocked && !isDemo}
@@ -114,7 +117,7 @@ export default function Dashboard() {
             return (
               <div key={widget.id} className="relative">
                 <WidgetCard>
-                  <ErrorBoundary>
+                  <ErrorBoundary inline>
                     <Component />
                   </ErrorBoundary>
                 </WidgetCard>

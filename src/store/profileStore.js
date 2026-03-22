@@ -9,7 +9,10 @@ export const useProfileStore = create((set, get) => ({
   reset: () => set({ profile: undefined, loading: false, _userId: null }),
 
   fetchProfile: async (userId) => {
-    if (get()._userId === userId && get().profile !== undefined) return;
+    // Block if already loaded OR if a fetch is already in-flight for this user.
+    // Without the `loading` check, two concurrent calls both pass the guard while
+    // `profile` is still `undefined`, resulting in duplicate requests.
+    if (get()._userId === userId && (get().profile !== undefined || get().loading)) return;
     set({ loading: true, _userId: userId });
     try {
       const data = await getProfile(userId);

@@ -64,3 +64,12 @@ export async function deleteEvent(id, userId) {
   const { error } = await supabase.from('events').delete().eq('id', id).eq('user_id', userId);
   if (error) throw error;
 }
+
+export async function renameTagInEvents(userId, oldTag, newTag) {
+  const { error } = await supabase.rpc('rename_tag_in_events', {
+    p_user_id: userId,
+    p_old_tag: oldTag,
+    p_new_tag: newTag,
+  });
+  if (error) throw error;
+}

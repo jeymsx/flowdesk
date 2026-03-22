@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
@@ -935,6 +936,11 @@ export default function Sidebar() {
                 onClick={() => { closeUserMenu(); setShowChangelog(true); }}
               />
               <MenuRow
+                iconD="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                label="FAQ"
+                onClick={() => { closeUserMenu(); navigate('/faq'); }}
+              />
+              <MenuRow
                 iconD="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 label="Terms & Policies"
                 onClick={() => { closeUserMenu(); navigate('/terms'); }}
@@ -952,183 +958,170 @@ export default function Sidebar() {
 
       {/* ── Profile modal (portal) ── */}
       {showProfile && createPortal(
-        <div className="fixed inset-0 z-[9991] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setShowProfile(false); cancelUsernameEdit(); }}>
-          <div
-            className="relative w-full max-w-xl h-[480px] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200/80 dark:border-gray-700/60 flex overflow-hidden"
+        <div className="fixed inset-0 z-[9991] flex items-center justify-center p-4" onClick={() => { setShowProfile(false); cancelUsernameEdit(); }}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+            className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ── Left panel: identity + stats ── */}
-            <div className="relative w-52 shrink-0 flex flex-col items-center pt-8 pb-6 px-4" style={{ background: 'linear-gradient(to bottom, #15803d, #166534, #14532d)' }}>
-              {/* subtle pattern overlay */}
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-
-              <div className="relative w-20 h-20 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center text-white text-3xl font-black shadow-xl mb-3">
-                {initial}
-              </div>
-              <h2 className="relative text-base font-bold text-white text-center leading-tight">{displayName}</h2>
-              <p className="relative text-[11px] text-white/60 mt-0.5 text-center truncate w-full text-center">{user?.email}</p>
-              <span className="relative mt-2 px-2.5 py-0.5 bg-white/15 border border-white/20 rounded-full text-[10px] font-semibold text-white/90 text-center">
-                {levelTitle}
-              </span>
-
-              <div className="relative w-full mt-auto pt-4 space-y-2.5">
-                <div className="h-px w-full bg-white/15" />
-                {[
-                  { label: 'Level', value: level, icon: 'M13 10V3L4 14h7v7l9-11h-7z', color: 'text-white', filled: true },
-                  { label: 'XP', value: xp.toLocaleString(), icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', color: 'text-yellow-300', filled: true },
-                  { label: 'Streak', value: `${streak}d`, icon: 'M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z', color: 'text-orange-300', filled: true },
-                ].map(({ label, value, icon, color, filled }) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <svg className={`w-3.5 h-3.5 ${color} shrink-0`} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke={filled ? 'none' : 'currentColor'} strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-                      </svg>
-                      <span className="text-xs text-white/60">{label}</span>
-                    </div>
-                    <span className={`text-sm font-bold ${color}`}>{value}</span>
-                  </div>
-                ))}
-              </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Profile</h3>
+              <button
+                onClick={() => { setShowProfile(false); cancelUsernameEdit(); }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            {/* ── Right panel: info + username + danger ── */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 shrink-0">
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Profile</span>
-                <button
-                  onClick={() => { setShowProfile(false); cancelUsernameEdit(); }}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+            <div className="overflow-y-auto custom-scrollbar">
+              {/* User info */}
+              <div className="flex items-center gap-4 px-5 py-5 border-b border-gray-100 dark:border-gray-800">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-lg font-bold shrink-0">
+                  {initial}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{displayName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
+                  {memberSince && <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Member since {memberSince}</p>}
+                </div>
               </div>
 
-              {/* Scrollable content — expanding username form scrolls here, modal stays fixed */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-
-                {/* Info rows */}
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-                  {[
-                    { label: 'Member since', value: memberSince || '—', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-                    { label: 'Tasks today', value: todayTotal > 0 ? `${todayDone} / ${todayTotal}` : '—', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
-                  ].map(({ label, value, icon }, i, arr) => (
-                    <div key={label} className={`flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-gray-900 ${i < arr.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                      <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-                      </svg>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">{label}</span>
-                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{value}</span>
-                    </div>
-                  ))}
+              {/* Progress */}
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Progress</p>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Level {level}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{levelTitle}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-accent-500">{xp.toLocaleString()} XP</span>
                 </div>
+                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mb-3">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(xpInLevel / xpToNext) * 100}%` }}
+                    transition={{ duration: 0.9, ease: "easeOut", delay: 0.15 }}
+                    style={{ boxShadow: '0 0 6px rgba(34,197,94,0.4)' }}
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-accent-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{streak}d streak</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-accent-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{todayDone}/{todayTotal} tasks today</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account */}
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Account</p>
 
                 {/* Username */}
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
-                    <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">Username</span>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Username</span>
                     {!editingUsername && (
-                      <button onClick={openUsernameEdit} className="text-xs font-semibold text-accent-500 hover:text-accent-400 transition-colors">
+                      <button onClick={openUsernameEdit} className="text-xs font-medium text-accent-500 hover:text-accent-600 transition-colors">
                         Change
-                      </button>
-                    )}
-                    {editingUsername && (
-                      <button onClick={cancelUsernameEdit} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                        Cancel
                       </button>
                     )}
                   </div>
                   {editingUsername ? (
-                    <div className="px-4 py-3 space-y-2">
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2"
+                    >
                       <div className="relative">
                         <input
-                          autoFocus
-                          value={newUsername}
+                          autoFocus value={newUsername}
                           onChange={(e) => setNewUsername(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Escape' && cancelUsernameEdit()}
                           placeholder="New username…"
-                          maxLength={20}
-                          className={`w-full px-3 py-2 pr-9 bg-gray-50 dark:bg-gray-800 border rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-colors ${
-                            usernameStatus === 'available' ? 'border-green-400 focus:ring-green-400/30'
-                            : usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'error' ? 'border-red-400 focus:ring-red-400/30'
-                            : 'border-gray-200 dark:border-gray-700 focus:ring-accent-500/30'
+                          className={`w-full px-3 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border rounded-xl text-sm transition-all focus:outline-none focus:ring-2 ${
+                            usernameStatus === 'available' ? 'border-green-500 ring-green-500/20'
+                            : usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-500 ring-red-500/20'
+                            : 'border-gray-200 dark:border-gray-700 focus:border-accent-500 ring-accent-500/20'
                           }`}
                         />
-                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                          {usernameStatus === 'checking' && (
-                            <svg className="w-4 h-4 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                            </svg>
-                          )}
-                          {usernameStatus === 'available' && (
-                            <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                          {(usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'error') && (
-                            <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          )}
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {usernameStatus === 'checking' && <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
+                          {usernameStatus === 'available' && <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={`text-[11px] font-medium ${
-                          usernameStatus === 'available' ? 'text-green-500'
-                          : usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'error' ? 'text-red-500'
-                          : 'text-gray-400'
-                        }`}>
-                          {usernameStatus === 'available' && 'Available!'}
-                          {usernameStatus === 'same' && 'Same as current.'}
-                          {(usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'error') && usernameError}
-                          {(usernameStatus === 'idle' || usernameStatus === 'checking') && '3–20 chars · letters, numbers, _'}
+                      <div className="flex items-center justify-between">
+                        <p className={`text-xs ${usernameStatus === 'available' ? 'text-green-500' : 'text-gray-400'}`}>
+                          {usernameError || (usernameStatus === 'available' ? 'Username available' : 'Letters, numbers, underscores')}
                         </p>
-                        <button
-                          onClick={handleUsernameSubmit}
-                          disabled={savingUsername || usernameStatus !== 'available'}
-                          className="shrink-0 px-3 py-1.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors"
-                        >
-                          {savingUsername ? 'Saving…' : 'Save'}
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={cancelUsernameEdit} className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Cancel</button>
+                          <button
+                            onClick={handleUsernameSubmit}
+                            disabled={savingUsername || usernameStatus !== 'available'}
+                            className="px-3 py-1.5 bg-accent-500 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ) : (
-                    <div className="px-4 py-2.5">
-                      <span className="inline-flex items-center px-2.5 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-mono text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-700">
-                        @{profile?.username || displayName}
-                      </span>
+                    <div className="px-3 py-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">@{profile?.username || displayName}</span>
+                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </div>
                   )}
                 </div>
 
-                {/* Danger zone */}
-                <div className="rounded-xl border border-red-100 dark:border-red-900/40 overflow-hidden">
-                  <div className="px-4 py-2 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/40">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-red-500 dark:text-red-400">Danger zone</p>
+                {/* Member since + Tasks */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">Member Since</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{memberSince || '—'}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-gray-900">
-                    <div>
-                      <p className="text-xs font-medium text-gray-900 dark:text-white">Delete account</p>
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Permanently removes all your data</p>
-                    </div>
-                    <button
-                      onClick={() => setDeleteConfirm(true)}
-                      className="shrink-0 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      Delete
-                    </button>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">Tasks Today</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{todayDone} / {todayTotal}</span>
                   </div>
                 </div>
+              </div>
 
+              {/* Danger Zone */}
+              <div className="px-5 py-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Danger Zone</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Permanently delete your account and all associated data.</p>
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="w-full py-2.5 border border-red-200 dark:border-red-500/30 text-red-500 dark:text-red-400 text-sm font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  Delete Account
+                </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>,
         document.body
       )}
@@ -1224,72 +1217,70 @@ export default function Sidebar() {
       {/* ── Delete account modal ── */}
       {deleteConfirm && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { if (!deletingAccount) { setDeleteConfirm(false); setDeleteTyped(''); } }}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
-          <div
-            className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-xs border border-gray-200 dark:border-gray-800 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Dark red header */}
-            <div className="bg-gradient-to-br from-red-600 to-red-800 px-6 pt-8 pb-10">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-black text-white tracking-tight">Delete Account</h2>
-                <p className="text-sm text-red-200 mt-1.5 leading-relaxed">
-                  This is permanent. Every task, note, milestone, and setting tied to your account will be gone forever.
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Delete account?</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                  Every task, note, and milestone tied to your account will be permanently gone.
                 </p>
               </div>
             </div>
 
-            {/* Body */}
-            <div className="bg-white dark:bg-gray-900 px-6 -mt-4 rounded-t-3xl pt-5 pb-6 space-y-4">
-              {/* Account being deleted */}
-              <div className="flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                   {initial}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{displayName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{displayName}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
                 </div>
               </div>
 
-              {/* Type to confirm */}
               <div className="space-y-1.5">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Type <span className="font-bold font-mono text-red-500 tracking-widest select-none">DELETE</span> to confirm
+                  Type <span className="font-mono font-bold text-red-500 select-none">DELETE</span> to confirm
                 </p>
                 <input
                   value={deleteTyped}
                   onChange={(e) => setDeleteTyped(e.target.value)}
                   placeholder="DELETE"
                   disabled={deletingAccount}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-colors"
+                  className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-colors"
                 />
               </div>
-
-              {/* Buttons */}
-              <div className="flex flex-col gap-2 pt-1">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount || deleteTyped !== 'DELETE'}
-                  className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
-                >
-                  {deletingAccount ? 'Deleting your account…' : 'Permanently delete my account'}
-                </button>
-                <button
-                  onClick={() => { setDeleteConfirm(false); setDeleteTyped(''); }}
-                  disabled={deletingAccount}
-                  className="w-full py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
-                >
-                  Cancel, keep my account
-                </button>
-              </div>
             </div>
-          </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setDeleteConfirm(false); setDeleteTyped(''); }}
+                disabled={deletingAccount}
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || deleteTyped !== 'DELETE'}
+                className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+              >
+                {deletingAccount ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </motion.div>
         </div>,
         document.body
       )}
@@ -1297,56 +1288,43 @@ export default function Sidebar() {
       {/* ── Sign out confirmation modal ── */}
       {signOutConfirm && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setSignOutConfirm(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-xs border border-gray-200 dark:border-gray-800 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Amber top bar */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 to-orange-500" />
-
-            <div className="p-6">
-              {/* Icon + heading */}
-              <div className="flex flex-col items-center text-center mb-5">
-                <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mb-3">
-                  <svg className="w-7 h-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">Sign out of FlowDesk?</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                  You'll need to sign back in to access your dashboard, tasks, and progress.
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Sign out?</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                  You'll need to sign back in to access your dashboard and progress.
                 </p>
               </div>
-
-              {/* Account card */}
-              <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl mb-5">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                  {initial}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{displayName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => { setSignOutConfirm(false); signOut(); navigate('/'); }}
-                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors"
-                >
-                  Yes, sign me out
-                </button>
-                <button
-                  onClick={() => setSignOutConfirm(false)}
-                  className="w-full py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
-          </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSignOutConfirm(false)}
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setSignOutConfirm(false); signOut(); navigate('/'); }}
+                className="flex-1 py-2 rounded-xl bg-gray-900 dark:bg-white hover:bg-gray-700 dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </motion.div>
         </div>,
         document.body
       )}

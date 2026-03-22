@@ -32,10 +32,13 @@ function FullscreenTimerOverlay({ onClose }) {
   const label = isBreak ? 'Break' : (preset === 'custom' ? 'Custom' : BUILTIN_PRESETS[preset].label);
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onClose, togglePlay]);
 
   return (
     <motion.div
@@ -151,10 +154,17 @@ function FullscreenTimerOverlay({ onClose }) {
         </button>
       </div>
 
-      {/* ESC hint */}
-      <div className="absolute bottom-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/8 border border-gray-200 dark:border-white/10">
-        <kbd className="text-[11px] font-bold text-gray-600 dark:text-gray-300 font-mono">ESC</kbd>
-        <span className="text-[11px] text-gray-400 dark:text-gray-500">to exit fullscreen</span>
+      {/* Keyboard hints */}
+      <div className="absolute bottom-8 flex items-center gap-3 px-4 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <span className="flex items-center gap-1.5">
+          <kbd className="text-[11px] font-bold text-gray-700 dark:text-gray-200 font-mono">Space</kbd>
+          <span className="text-[11px] text-gray-400 dark:text-gray-400">pause / play</span>
+        </span>
+        <span className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+        <span className="flex items-center gap-1.5">
+          <kbd className="text-[11px] font-bold text-gray-700 dark:text-gray-200 font-mono">ESC</kbd>
+          <span className="text-[11px] text-gray-400 dark:text-gray-400">exit fullscreen</span>
+        </span>
       </div>
     </motion.div>
   );

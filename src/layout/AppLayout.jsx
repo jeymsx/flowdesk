@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
@@ -25,6 +25,18 @@ export default function AppLayout({ children }) {
   );
   const isMobile = useMediaQuery('(max-width: 768px)');
   const navigate = useNavigate();
+
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline  = () => setIsOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online',  goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online',  goOnline);
+    };
+  }, []);
 
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
@@ -68,12 +80,22 @@ export default function AppLayout({ children }) {
     </div>
   );
 
+  const offlineBanner = isOffline && (
+    <div className="fixed top-0 inset-x-0 z-[9989] flex items-center justify-center gap-2 py-2 px-4 bg-amber-50 dark:bg-gray-900 border-b border-amber-200 dark:border-amber-500/20 pointer-events-none">
+      <svg className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83" />
+      </svg>
+      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">You're offline — changes won't sync until you reconnect</span>
+    </div>
+  );
+
   if (isMobile) {
     return (
       <>
         <FocusTimerEngine />
         <FloatingTimer />
         {leaveModal}
+        {offlineBanner}
         <div
           className={`${mobileTab === 'calendar' ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950'} text-gray-900 dark:text-gray-100 overflow-hidden`}
           style={{
@@ -106,6 +128,7 @@ export default function AppLayout({ children }) {
       <FocusTimerEngine />
       <FloatingTimer />
       {leaveModal}
+      {offlineBanner}
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
         <Sidebar />
         {isMobile && sidebarOpen && (

@@ -89,6 +89,7 @@ function findAvailableSpot(items, w, h, cols) {
 let saveTimeout = null;
 let _saveInFlight = false;
 let _saveQueued = false;
+let taskOrderTimeout = null;
 
 async function executeSave(get) {
   if (_saveInFlight) {
@@ -157,6 +158,7 @@ export const useWidgetStore = create((set, get) => ({
 
   reset: () => {
     clearTimeout(saveTimeout);
+    clearTimeout(taskOrderTimeout);
     _saveInFlight = false;
     _saveQueued = false;
     set({
@@ -181,6 +183,12 @@ export const useWidgetStore = create((set, get) => ({
       merged[bp] = [...incoming, ...hidden];
     }
     set({ layouts: merged, activeSavedLayoutId: null });
+    // Persistence is triggered by onDragResizeStop, not here, to avoid
+    // resetting the debounce timer on every intermediate drag frame.
+  },
+
+  // Called by Dashboard onDragStop / onResizeStop — fires once per interaction.
+  onDragResizeStop: () => {
     persistLayout(get);
   },
 
@@ -282,7 +290,9 @@ export const useWidgetStore = create((set, get) => ({
   setTaskOrder: (order) => {
     set({ taskOrder: order });
     const userId = get()._userId;
-    if (userId) persistTaskOrder(userId, order).catch(() => {});
+    if (!userId) return;
+    clearTimeout(taskOrderTimeout);
+    taskOrderTimeout = setTimeout(() => persistTaskOrder(userId, order).catch(() => {}), 600);
   },
 
   flushLayout: () => {

@@ -15,6 +15,7 @@ export const useBookmarksStore = create((set, get) => ({
   reset: () => set({ bookmarks: [], loading: false, _userId: null, _loaded: false }),
 
   load: async (userId) => {
+    if (!userId) return;
     if (get()._userId === userId && get()._loaded) return;
     set({ loading: true, _userId: userId });
     try {

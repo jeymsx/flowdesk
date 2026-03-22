@@ -2,12 +2,17 @@ import { create } from 'zustand';
 import { getGamification, saveGamification, awardXPRemote } from '../services/gamification';
 
 // ── Level system ───────────────────────────────────────────────────────────────
-// Linear: 100 XP per level
+// Incremental: XP to advance level N → N+1 = 50 × (N + 1)
+//   Level 1→2: 100 XP,  2→3: 150 XP,  3→4: 200 XP, …
+// Cumulative XP to reach level N: 25 × (N − 1) × (N + 2)
+// Closed-form inverse: level = floor((−1 + √(9 + 4·xp/25)) / 2)
 
 export function computeLevel(xp) {
-  const level = Math.floor(xp / 100) + 1;
-  const xpInLevel = xp % 100;
-  return { level, xpInLevel, xpToNext: 100 };
+  const level = Math.max(1, Math.floor((-1 + Math.sqrt(9 + (4 * xp) / 25)) / 2));
+  const xpForThisLevel = 25 * (level - 1) * (level + 2);
+  const xpToNext = 50 * (level + 1);
+  const xpInLevel = xp - xpForThisLevel;
+  return { level, xpInLevel, xpToNext };
 }
 
 export function getLevelTitle(level) {
@@ -34,15 +39,18 @@ export const CHALLENGE_POOL = [
   { id: 'streak_alive', label: 'Keep your streak alive', xp: 20, check: (s) => s.streak >= 1 },
 ];
 
-function getDayOfYear(d) {
-  const start = new Date(d.getFullYear(), 0, 0);
-  return Math.floor((d - start) / 86400000);
+// Use UTC timestamps so DST offsets never creep into the arithmetic.
+// new Date(y, m-1, d) creates LOCAL midnight, which shifts by ±1h across a
+// DST boundary and makes Math.floor round to the wrong day number.
+function getDayOfYear(y, m, d) {
+  const start = Date.UTC(y, 0, 1);
+  const current = Date.UTC(y, m - 1, d);
+  return Math.floor((current - start) / 86400000) + 1;
 }
 
 export function getDailyChallengesForDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  const seed = getDayOfYear(date) * 31 + y;
+  const seed = getDayOfYear(y, m, d) * 31 + y;
   const sorted = [...CHALLENGE_POOL].sort((a, b) => {
     const ha = (seed * 1013 + a.id.charCodeAt(0) * 7) % 1000;
     const hb = (seed * 1013 + b.id.charCodeAt(0) * 7) % 1000;
@@ -59,6 +67,9 @@ export const STREAK_MILESTONES = [
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+// Local date string so daily resets happen at the user's local midnight.
+// getDayOfYear uses Date.UTC() arithmetic to stay DST-safe even though the
+// date string itself is derived from local time.
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -110,6 +121,16 @@ export const useGamificationStore = create((set, get) => ({
   reset: () => {
     clearTimeout(saveTimeout);
     set({ xp: 0, daily: null, streakMilestonesClaimed: [], focusSessionsToday: 0, xpToasts: [], _userId: null, loaded: false });
+  },
+
+  // Flush any pending debounced save immediately (called before sign-out so
+  // challenge completions earned in the last ~1000ms aren't silently discarded).
+  flushGamification: () => {
+    const userId = get()._userId;
+    if (!userId) return Promise.resolve();
+    clearTimeout(saveTimeout);
+    const { xp, daily, streakMilestonesClaimed } = get();
+    return saveGamification(userId, { xp, daily, streakMilestonesClaimed }).catch(() => {});
   },
 
   awardXP: async (reason) => {

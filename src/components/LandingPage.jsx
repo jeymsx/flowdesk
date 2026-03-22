@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const VERSION = 'v2.0.0';
+const VERSION = 'v2.1.0';
 
 const FEATURES = [
   {
@@ -1283,6 +1283,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-end gap-2">
             <nav className="flex items-center gap-8 text-xs text-gray-400 dark:text-gray-500">
               <Link to="/changelog" className="hover:text-gray-900 dark:hover:text-white transition-colors">Changelog</Link>
+              <Link to="/faq" className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</Link>
               <Link to="/terms" className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</Link>
             </nav>

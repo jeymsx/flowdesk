@@ -69,13 +69,22 @@ export default function ChangelogPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-xs text-gray-400 dark:text-gray-600 space-x-4">
-          <Link to="/" className="hover:text-gray-500 transition-colors">Home</Link>
-          <span>·</span>
-          <Link to="/terms" className="hover:text-gray-500 transition-colors">Terms</Link>
-          <span>·</span>
-          <Link to="/privacy" className="hover:text-gray-500 transition-colors">Privacy</Link>
-        </div>
+        <footer className="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+            <Link to="/" className="hover:text-accent-500 transition-colors">Home</Link>
+            <span>•</span>
+            <Link to="/changelog" className="hover:text-accent-500 transition-colors">Changelog</Link>
+            <span>•</span>
+            <Link to="/faq" className="hover:text-accent-500 transition-colors">FAQ</Link>
+            <span>•</span>
+            <Link to="/terms" className="hover:text-accent-500 transition-colors">Terms</Link>
+            <span>•</span>
+            <Link to="/privacy" className="hover:text-accent-500 transition-colors">Privacy</Link>
+          </nav>
+          <p className="mt-6 text-[10px] font-medium text-gray-300 dark:text-gray-700 uppercase tracking-[0.2em]">
+            © 2026 FlowDesk · Built for focus
+          </p>
+        </footer>
       </div>
     </div>
   );

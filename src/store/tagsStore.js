@@ -39,9 +39,11 @@ export const useTagsStore = create((set, get) => ({
     const trimmed = newName.trim();
     if (!trimmed || trimmed === oldName) return;
     if (get().tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+    // Persist the tag row first. If this fails nothing local has changed yet,
+    // so there's nothing to roll back — cleaner than an optimistic-then-revert dance.
+    await updateTagService(id, { name: trimmed }, get()._userId);
     set((s) => ({ tags: s.tags.map((t) => (t.id === id ? { ...t, name: trimmed } : t)) }));
     await useEventsStore.getState().renameTagInEvents(oldName, trimmed);
-    await updateTagService(id, { name: trimmed }, get()._userId);
   },
 
   removeTag: async (id) => {
