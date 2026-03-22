@@ -16,6 +16,9 @@ const FILTERS = [
   { key: 'all', label: 'All' },
 ];
 
+const PAGE_SIZE = 10;
+const PAGINATED_FILTERS = new Set(['past', 'all']);
+
 const EVENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 function toDateStr(d) {
@@ -74,6 +77,7 @@ export default function TasksWidget() {
 
   const [filter, setFilter] = useState('today');
   const [dateOverride, setDateOverride] = useState('');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Edit state
   const [editingId, setEditingId] = useState(null);
@@ -153,6 +157,9 @@ export default function TasksWidget() {
 
   useEffect(() => { load(userId); }, [userId, load]);
   useEffect(() => { if (userId) loadTags(userId); }, [userId, loadTags]);
+
+  // Reset pagination when filter or date override changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filter, dateOverride]);
 
   // Track anchor positions on scroll/resize
   const [addPopPos, setAddPopPos] = useState({ left: 100, top: 100 });
@@ -295,6 +302,10 @@ export default function TasksWidget() {
 
   const sorted = [...incompleteOrdered, ...completedFiltered];
   const doneCount = completedFiltered.length;
+
+  const isPaginated = PAGINATED_FILTERS.has(filter) && !dateOverride;
+  const displayedTasks = isPaginated ? sorted.slice(0, visibleCount) : sorted;
+  const hasMore = isPaginated && visibleCount < sorted.length;
 
   const activeLabel = dateOverride
     ? new Date(dateOverride + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -660,7 +671,7 @@ export default function TasksWidget() {
             </p>
           </div>
         ) : (
-          sorted.map((evt) => {
+          displayedTasks.map((evt) => {
             const isDraggable = !evt.completed;
             const isBeingDragged = dragId === evt.id;
             const isDropTarget = dragOverId === evt.id && dragId !== evt.id;
@@ -796,6 +807,15 @@ export default function TasksWidget() {
               </div>
             );
           })
+        )}
+
+        {hasMore && (
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="w-full mt-1 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-accent-500 dark:hover:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
+          >
+            Load more · {sorted.length - visibleCount} remaining
+          </button>
         )}
       </div>
 

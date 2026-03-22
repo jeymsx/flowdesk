@@ -1,10 +1,20 @@
 export const RELEASES = [
   {
     version: '2.1.0',
-    label: 'Smarter XP & Daily Fixes',
+    label: 'Smarter XP, Daily Fixes & Music',
     date: 'March 22, 2026',
-    description: 'Leveling up now takes real effort — XP requirements grow as you rank up. Daily challenges reset at the right time for every timezone, the fullscreen timer gets a keyboard shortcut, and a new FAQ page answers the most common questions.',
+    description: 'Leveling up now takes real effort — XP requirements grow as you rank up. Daily challenges reset at the right time for every timezone, the fullscreen timer gets a keyboard shortcut, and the Music widget gets a major upgrade with a mini player, playlist support, and saved links.',
     sections: [
+      {
+        title: 'Music',
+        color: 'teal',
+        items: [
+          'Mini player — music keeps playing when you navigate to other pages. A floating player appears in the bottom-right corner with controls to skip tracks or stop.',
+          'YouTube playlist support — paste a playlist URL and the full queue plays in order. Next and previous buttons skip between tracks in the playlist.',
+          'Save custom links — bookmark up to 5 YouTube videos or playlists for quick access. If you skip the label, the video title is fetched automatically.',
+          'Invalid URLs now show an error toast instead of silently failing.',
+        ],
+      },
       {
         title: 'Gamification',
         color: 'yellow',

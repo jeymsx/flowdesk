@@ -6,6 +6,7 @@ import { useWidgetStore } from './store/widgetStore';
 import { useProfileStore } from './store/profileStore';
 import { useGamificationStore } from './store/gamificationStore';
 import XPToastManager from './components/gamification/XPToast';
+import MusicPlayer from './features/music/MusicPlayer';
 import { checkIsAdmin } from './services/admin';
 import AppLayout from './layout/AppLayout';
 import ProtectedRoute from './layout/ProtectedRoute';
@@ -13,6 +14,32 @@ import Dashboard from './components/Dashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import UsernameModal from './components/UsernameModal';
 import LoadingScreen from './components/LoadingScreen';
+
+function ErrorToastManager() {
+  const errorToasts = useUIStore((s) => s.errorToasts);
+  if (!errorToasts.length) return null;
+  return (
+    <div style={{
+      position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      pointerEvents: 'none',
+    }}>
+      {errorToasts.map((t) => (
+        <div key={t.id} style={{
+          background: 'rgba(239,68,68,0.95)', color: '#fff', borderRadius: 12,
+          padding: '9px 18px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          animation: 'fdToastIn 0.2s ease',
+          whiteSpace: 'nowrap',
+        }}>
+          {t.message}
+        </div>
+      ))}
+      <style>{`@keyframes fdToastIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }`}</style>
+    </div>
+  );
+}
 
 // Non-critical pages — code-split so authenticated dashboard users never
 // download bundles they won't visit.
@@ -127,6 +154,8 @@ export default function App() {
       <DarkModeSync />
       <ScrollToTop />
       <XPToastManager />
+      <ErrorToastManager />
+      <MusicPlayer />
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Suspense fallback={<LoadingScreen />}><LandingPage /></Suspense>} />

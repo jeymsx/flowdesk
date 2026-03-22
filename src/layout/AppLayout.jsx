@@ -12,13 +12,12 @@ import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default function AppLayout({ children }) {
-  const { sidebarOpen, setSidebarOpen, mobileTab, focusRunning, musicActive, leaveGuardPending, setLeaveGuardPending } = useUIStore(
+  const { sidebarOpen, setSidebarOpen, mobileTab, focusRunning, leaveGuardPending, setLeaveGuardPending } = useUIStore(
     useShallow((s) => ({
       sidebarOpen: s.sidebarOpen,
       setSidebarOpen: s.setSidebarOpen,
       mobileTab: s.mobileTab,
       focusRunning: s.focusRunning,
-      musicActive: s.musicActive,
       leaveGuardPending: s.leaveGuardPending,
       setLeaveGuardPending: s.setLeaveGuardPending,
     }))
@@ -54,11 +53,7 @@ export default function AppLayout({ children }) {
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Leave page?</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              {focusRunning && musicActive
-                ? 'Your focus timer and music will stop.'
-                : focusRunning
-                ? 'Your focus timer is running and will stop.'
-                : 'Your music will stop.'}
+              Your focus timer is running and will stop.
             </p>
           </div>
         </div>

@@ -59,4 +59,13 @@ export const useUIStore = create((set) => ({
   isDemo: false,
   enterDemo: () => set({ isDemo: true }),
   exitDemo: () => set({ isDemo: false }),
+
+  errorToasts: [],
+  pushError: (message) => {
+    const id = Date.now() + Math.random();
+    set((s) => ({ errorToasts: [...s.errorToasts, { id, message }] }));
+    setTimeout(() => {
+      set((s) => ({ errorToasts: s.errorToasts.filter((t) => t.id !== id) }));
+    }, 3500);
+  },
 }));
