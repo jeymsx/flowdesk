@@ -74,6 +74,35 @@ export default function MusicPlayer() {
   // Keep uiStore in sync (used by other consumers)
   useEffect(() => { setMusicActive(!!media); }, [media, setMusicActive]);
 
+  // ── Media Session API ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !media) return;
+
+    const station = !media.listId ? STATIONS.find((s) => s.id === media.videoId) : null;
+    const title   = station ? station.title : media.listId ? 'Playlist' : 'Custom Video';
+    const thumb   = media.videoId
+      ? [{ src: `https://i.ytimg.com/vi/${media.videoId}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' }]
+      : [];
+
+    navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'FlowDesk Music', artwork: thumb });
+
+    const post = (func) =>
+      musicIframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func, args: [] }), '*'
+      );
+
+    navigator.mediaSession.setActionHandler('play',          () => post('playVideo'));
+    navigator.mediaSession.setActionHandler('pause',         () => post('pauseVideo'));
+    navigator.mediaSession.setActionHandler('nexttrack',     nextTrack);
+    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+
+    return () => {
+      ['play', 'pause', 'nexttrack', 'previoustrack'].forEach((a) =>
+        navigator.mediaSession.setActionHandler(a, null)
+      );
+    };
+  }, [media, nextTrack, prevTrack]);
+
   // Track window dimensions for the mini player corner position
   useEffect(() => {
     const update = () => { setWW(window.innerWidth); setWH(window.innerHeight); };
