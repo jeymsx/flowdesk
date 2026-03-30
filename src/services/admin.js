@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { computeLevel } from '../store/gamificationStore';
 
 export async function checkIsAdmin() {
   const { data, error } = await supabase.rpc('is_admin');
@@ -20,13 +21,16 @@ export async function getAdminUserStats() {
   if (error) throw error;
   const profiles = data || [];
 
-  const { totalUsers, activeUsers, usersWithUsername, totalXP, avgXP } = rpcData;
+  const { totalUsers, usersWithUsername, totalXP, avgXP } = rpcData;
+
+  // Active users: profiles that have earned at least 1 XP (genuine app usage)
+  const activeUsers = profiles.filter((p) => (p.gamification?.xp || 0) > 0).length;
 
   // Level distribution
   const levelCounts = {};
   profiles.forEach((p) => {
     const xp = p.gamification?.xp || 0;
-    const level = Math.floor(xp / 100) + 1;
+    const { level } = computeLevel(xp);
     levelCounts[level] = (levelCounts[level] || 0) + 1;
   });
 
@@ -46,7 +50,7 @@ export async function getAdminUserStats() {
       id: p.id,
       username: p.username || 'Anonymous',
       xp: p.gamification?.xp || 0,
-      level: Math.floor((p.gamification?.xp || 0) / 100) + 1,
+      level: computeLevel(p.gamification?.xp || 0).level,
     }))
     .sort((a, b) => b.xp - a.xp)
     .slice(0, 10);

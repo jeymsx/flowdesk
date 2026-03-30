@@ -4,15 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { checkIsAdmin, getAdminUserStats, getAdminFeedbackStats } from '../services/admin';
 import { deleteFeedback } from '../services/feedback';
+import { getLevelTitle as computeLevelTitle } from '../store/gamificationStore';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
 } from 'recharts';
 
-const LEVEL_TITLES = ['Newcomer', 'Focused', 'Achiever', 'Consistent', 'Deep Worker', 'Flow Master', 'Legend'];
-function getLevelTitle(level) {
-  return LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];
-}
+const getLevelTitle = computeLevelTitle;
 
 // Tier color for level badge
 function getLevelTier(level) {
