@@ -872,6 +872,11 @@ export default function Sidebar() {
                 label="Install App"
                 onClick={() => { closeUserMenu(); if (canInstall) install(); else alert('Open browser menu → "Install FlowDesk" to install as an app.'); }}
               />
+              <MenuRow
+                iconD="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"
+                label="Buy me a coffee"
+                onClick={() => { closeUserMenu(); window.open('https://ko-fi.com/flowdesk', '_blank'); }}
+              />
 
               <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
 

@@ -337,6 +337,17 @@ export default function MobileProfileSheet() {
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Install App</span>
           </button>
 
+          {/* Buy me a coffee */}
+          <button
+            onClick={() => window.open('https://ko-fi.com/flowdesk', '_blank')}
+            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" />
+            </svg>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Buy me a coffee</span>
+          </button>
+
           {/* Reset Layout */}
           <button
             onClick={() => { resetLayout(); setShowMobileProfile(false); }}
