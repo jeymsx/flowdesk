@@ -87,6 +87,13 @@ export default function FloatingNote() {
           width: PIP_W,
           height: PIP_H,
         });
+
+        pipWin.document.documentElement.style.height = '100%';
+        pipWin.document.body.style.height = '100%';
+        pipWin.document.body.style.margin = '0';
+        pipWin.document.body.style.display = 'flex';
+        pipWin.document.body.style.flexDirection = 'column';
+
         if (cancelled) {
           pipWin.close();
           return;
@@ -95,10 +102,22 @@ export default function FloatingNote() {
         pipWinRef.current = pipWin;
         copyStyles(pipWin);
         applyDark(pipWin, darkMode);
-        pipWin.document.body.style.cssText = 'margin:0;padding:0;overflow:hidden;';
+        pipWin.document.body.style.cssText = `
+          margin:0;
+          padding:0;
+          overflow:hidden;
+          display:flex;
+          flex-direction:column;
+          height:100%;
+        `;
 
         const container = pipWin.document.createElement('div');
-        container.style.cssText = 'width:100%;height:100%;';
+        container.style.cssText = `
+          width:100%;
+          height:100%;
+          display:flex;
+          flex-direction:column;
+        `;
         pipWin.document.body.innerHTML = '';
         pipWin.document.body.appendChild(container);
 

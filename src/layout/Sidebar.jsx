@@ -259,7 +259,7 @@ export default function Sidebar() {
     if (!editingUsername) return;
     const name = newUsername.trim();
     if (!name) { setUsernameStatus('idle'); return; }
-    if (name === (profile?.username || displayName)) { setUsernameStatus('same'); return; }
+    if (name === (profile?.username || displayName)) { setUsernameStatus('same'); setUsernameError(''); return; }
     // Validate format: 3-20 chars, alphanumeric + underscores
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(name)) {
       setUsernameStatus('invalid');
@@ -274,7 +274,12 @@ export default function Sidebar() {
         const available = await checkUsernameAvailable(name, user?.id);
         if (cancelled) return;
         setUsernameStatus(available ? 'available' : 'taken');
-        if (!available) setUsernameError('Username already taken');
+
+        if (available) {
+          setUsernameError(''); // ✅ CLEAR ERROR
+        } else {
+          setUsernameError('Username already taken');
+        }
       } catch {
         if (cancelled) return;
         setUsernameStatus('error');

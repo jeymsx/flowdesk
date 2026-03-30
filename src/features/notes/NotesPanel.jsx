@@ -130,7 +130,7 @@ export default function NotesPanel({ mode = 'widget', supportsPiP = false, onPop
 
   if (showEditor) {
     return (
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="h-full flex flex-col overflow-hidden min-h-0">
         <div className="flex items-center gap-2 px-3 pt-3 pb-2 shrink-0 border-b border-gray-100 dark:border-gray-800">
           <button
             onClick={handleBack}
