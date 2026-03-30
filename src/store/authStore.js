@@ -9,6 +9,7 @@ import { useProfileStore } from './profileStore';
 import { useGamificationStore } from './gamificationStore';
 import { useFocusStore } from './focusStore';
 import { useMusicStore } from './musicStore';
+import { useNotesStore } from './notesStore';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -53,6 +54,7 @@ export const useAuthStore = create((set, get) => ({
         useGamificationStore.getState().reset();
         useFocusStore.getState().reset();
         useMusicStore.getState().reset();
+        useNotesStore.getState().reset();
       }
     });
     set({ _authSubscription: subscription, _initializing: false });
@@ -97,6 +99,7 @@ export const useAuthStore = create((set, get) => ({
     await Promise.all([
       useWidgetStore.getState().flushLayout(),
       useGamificationStore.getState().flushGamification(),
+      useNotesStore.getState().saveActiveNote(),
     ]);
     await supabase.auth.signOut();
     // Clean up any legacy localStorage note key from the old encryption scheme

@@ -7,9 +7,13 @@ import MobileProfileSheet from './MobileProfileSheet';
 import MobileCalendarView from '../features/calendar/MobileCalendarView';
 import FocusTimerEngine from '../features/focus/FocusTimerEngine';
 import FloatingTimer from '../features/focus/FloatingTimer';
+import FloatingNote from '../features/notes/FloatingNote';
+import WhatsNewModal from '../components/WhatsNewModal';
 import { useShallow } from 'zustand/react/shallow';
 import { useUIStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { LATEST_RELEASE } from '../data/changelog';
 
 export default function AppLayout({ children }) {
   const { sidebarOpen, setSidebarOpen, mobileTab, focusRunning, leaveGuardPending, setLeaveGuardPending } = useUIStore(
@@ -24,8 +28,11 @@ export default function AppLayout({ children }) {
   );
   const isMobile = useMediaQuery('(max-width: 768px)');
   const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.user?.id);
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+
   useEffect(() => {
     const goOffline = () => setIsOffline(true);
     const goOnline  = () => setIsOffline(false);
@@ -40,6 +47,30 @@ export default function AppLayout({ children }) {
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
   }, [isMobile, setSidebarOpen]);
+
+  useEffect(() => {
+    if (!userId) {
+      setShowWhatsNew(false);
+      return;
+    }
+
+    const key = `flowdesk-seen-release:${userId}`;
+    let seenVersion = null;
+    try {
+      seenVersion = localStorage.getItem(key);
+    } catch {}
+
+    setShowWhatsNew(seenVersion !== LATEST_RELEASE.version);
+  }, [userId]);
+
+  const dismissWhatsNew = () => {
+    if (userId) {
+      try {
+        localStorage.setItem(`flowdesk-seen-release:${userId}`, LATEST_RELEASE.version);
+      } catch {}
+    }
+    setShowWhatsNew(false);
+  };
 
   const leaveModal = leaveGuardPending !== null && (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -89,6 +120,8 @@ export default function AppLayout({ children }) {
       <>
         <FocusTimerEngine />
         <FloatingTimer />
+        <FloatingNote />
+        {showWhatsNew && <WhatsNewModal onClose={dismissWhatsNew} />}
         {leaveModal}
         {offlineBanner}
         <div
@@ -122,6 +155,8 @@ export default function AppLayout({ children }) {
     <>
       <FocusTimerEngine />
       <FloatingTimer />
+      <FloatingNote />
+      {showWhatsNew && <WhatsNewModal onClose={dismissWhatsNew} />}
       {leaveModal}
       {offlineBanner}
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
