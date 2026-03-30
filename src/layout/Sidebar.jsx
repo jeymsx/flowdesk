@@ -11,7 +11,6 @@ import { useTagsStore } from '../store/tagsStore';
 import { useGamificationStore, computeLevel, getLevelTitle } from '../store/gamificationStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { RELEASES, COLOR_MAP, DOT_MAP } from '../data/changelog';
-import { supabase } from '../services/supabase';
 import { checkUsernameAvailable } from '../services/profiles';
 import { useShallow } from 'zustand/react/shallow';
 import { checkIsAdmin } from '../services/admin';
@@ -180,9 +179,6 @@ export default function Sidebar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-  const [deleteTyped, setDeleteTyped] = useState('');
   const [signOutConfirm, setSignOutConfirm] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -324,22 +320,6 @@ export default function Sidebar() {
     setUsernameStatus('idle');
     setUsernameError('');
     setNewUsername('');
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeletingAccount(true);
-    try {
-      await supabase.rpc('delete_user');
-    } catch {
-      // RPC may not exist; sign out regardless
-    } finally {
-      setDeletingAccount(false);
-      setDeleteConfirm(false);
-      setDeleteTyped('');
-      setShowProfile(false);
-      await signOut();
-      navigate('/');
-    }
   };
 
   const closeUserMenu = () => { setShowUserMenu(false); setHelpOpen(false); };
@@ -1107,18 +1087,6 @@ export default function Sidebar() {
                   </div>
                 </div>
               </div>
-
-              {/* Danger Zone */}
-              <div className="px-5 py-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Danger Zone</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Permanently delete your account and all associated data.</p>
-                <button
-                  onClick={() => setDeleteConfirm(true)}
-                  className="w-full py-2.5 border border-red-200 dark:border-red-500/30 text-red-500 dark:text-red-400 text-sm font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                >
-                  Delete Account
-                </button>
-              </div>
             </div>
           </motion.div>
         </div>,
@@ -1212,78 +1180,6 @@ export default function Sidebar() {
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}
-
-      {/* ── Delete account modal ── */}
-      {deleteConfirm && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { if (!deletingAccount) { setDeleteConfirm(false); setDeleteTyped(''); } }}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-xs border border-gray-200 dark:border-gray-800 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Delete account?</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
-                  Every task, note, and milestone tied to your account will be permanently gone.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {initial}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{displayName}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Type <span className="font-mono font-bold text-red-500 select-none">DELETE</span> to confirm
-                </p>
-                <input
-                  value={deleteTyped}
-                  onChange={(e) => setDeleteTyped(e.target.value)}
-                  placeholder="DELETE"
-                  disabled={deletingAccount}
-                  className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setDeleteConfirm(false); setDeleteTyped(''); }}
-                disabled={deletingAccount}
-                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deletingAccount || deleteTyped !== 'DELETE'}
-                className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-              >
-                {deletingAccount ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </motion.div>
-        </div>,
-        document.body
-      )}
-
       {/* ── Sign out confirmation modal ── */}
       {signOutConfirm && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setSignOutConfirm(false)}>

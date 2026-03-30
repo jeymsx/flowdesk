@@ -26,10 +26,6 @@ const FAQ_DATA = [
       {
         q: "Are my notes private?",
         a: "Absolutely. Flowdesk includes a dedicated encryption layer for notes. When you create a note, it can be encrypted before it ever leaves your browser, meaning even we can't read the content without your key."
-      },
-      {
-        q: "Can I delete my account?",
-        a: "Yes. You can find the 'Delete Account' option in your Profile settings. This will permanently remove all your data, including tasks, notes, and saved layouts."
       }
     ]
   },

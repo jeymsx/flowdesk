@@ -8,6 +8,7 @@ import { useTagsStore } from './tagsStore';
 import { useProfileStore } from './profileStore';
 import { useGamificationStore } from './gamificationStore';
 import { useFocusStore } from './focusStore';
+import { useMusicStore } from './musicStore';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -51,6 +52,7 @@ export const useAuthStore = create((set, get) => ({
         useProfileStore.getState().reset();
         useGamificationStore.getState().reset();
         useFocusStore.getState().reset();
+        useMusicStore.getState().reset();
       }
     });
     set({ _authSubscription: subscription, _initializing: false });

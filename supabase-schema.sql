@@ -69,6 +69,22 @@ create table public.layouts (
 ) tablespace pg_default;
 
 -- =========================
+-- MUSIC LINKS
+-- =========================
+create table public.music_links (
+  id uuid not null default gen_random_uuid(),
+  user_id uuid not null,
+  label text not null default 'Saved'::text,
+  video_id text null,
+  list_id text null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint music_links_pkey primary key (id),
+  constraint music_links_user_id_fkey foreign key (user_id)
+    references auth.users (id) on delete cascade
+) tablespace pg_default;
+
+-- =========================
 -- MILESTONES
 -- =========================
 create table public.milestones (
@@ -195,6 +211,12 @@ create policy "Users can CRUD own layouts" on public.layouts
 -- milestones
 alter table public.milestones enable row level security;
 create policy "Users can CRUD own milestones" on public.milestones
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- music_links
+alter table public.music_links enable row level security;
+create policy "Users can CRUD own music links" on public.music_links
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { useMusicStore } from '../../store/musicStore';
 import { useUIStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 
 const STATIONS = [
   { id: '8nPOiusHRjc', title: 'Cozy Spring', emoji: '🌸' },
@@ -32,20 +33,23 @@ function parseYouTubeUrl(url) {
 }
 
 export default function MusicWidget() {
-  const { media, setMedia, iframeSlot, setIframeSlot, savedLinks, saveLink, removeLink, nextTrack, prevTrack } = useMusicStore(
+  const { media, setMedia, iframeSlot, setIframeSlot, savedLinks, saveLink, removeLink, nextTrack, prevTrack, loadSavedLinks } = useMusicStore(
     useShallow((s) => ({
       media: s.media, setMedia: s.setMedia,
       iframeSlot: s.iframeSlot, setIframeSlot: s.setIframeSlot,
       savedLinks: s.savedLinks, saveLink: s.saveLink, removeLink: s.removeLink,
       nextTrack: s.nextTrack, prevTrack: s.prevTrack,
+      loadSavedLinks: s.loadSavedLinks,
     }))
   );
   const pushError = useUIStore((s) => s.pushError);
+  const user = useAuthStore((s) => s.user);
 
   // Which preset station dot is highlighted (local UI state)
   const [stationIdx, setStationIdx] = useState(() => {
     const m = useMusicStore.getState().media;
-    if (!m || m.listId) return 0;
+    if (!m) return null;
+    if (m.listId) return -1;
     const idx = STATIONS.findIndex((s) => s.id === m.videoId);
     return idx >= 0 ? idx : 0;
   });
@@ -59,9 +63,13 @@ export default function MusicWidget() {
     return () => setIframeSlot(null);
   }, [setIframeSlot]);
 
+  useEffect(() => {
+    loadSavedLinks(user?.id ?? null);
+  }, [user?.id, loadSavedLinks]);
+
   // If media was externally cleared (mini player closed), reset stationIdx
   useEffect(() => {
-    if (!media && stationIdx === -1) setStationIdx(0);
+    if (!media && stationIdx !== null) setStationIdx(null);
   }, [media, stationIdx]);
 
   // ── Custom URL popover ─────────────────────────────────────────────────────
@@ -142,7 +150,7 @@ export default function MusicWidget() {
       } catch {}
       setSaving(false);
     }
-    saveLink(label || autoLabel(m), m);
+    await saveLink(label || autoLabel(m), m);
     setMedia(m);
     setStationIdx(-1);
     closePopover();
@@ -157,15 +165,18 @@ export default function MusicWidget() {
   // ── Station controls ───────────────────────────────────────────────────────
   const isPlaylist = !!media?.listId;
   const isCustom   = stationIdx === -1;
+  const isIdle     = stationIdx === null;
 
   const changeStation = (delta) => {
-    const newIdx = (stationIdx <= 0 ? 0 : stationIdx) + delta;
+    const baseIdx = typeof stationIdx === 'number' && stationIdx >= 0 ? stationIdx : 0;
+    const newIdx = baseIdx + delta;
     const clamped = ((newIdx % STATIONS.length) + STATIONS.length) % STATIONS.length;
     setStationIdx(clamped);
     setMedia({ videoId: STATIONS[clamped].id, listId: null });
   };
 
   const goToStation = (i) => {
+    if (Number.isNaN(i)) return;
     setStationIdx(i);
     if (i !== -1) setMedia({ videoId: STATIONS[i].id, listId: null });
   };
@@ -190,10 +201,15 @@ export default function MusicWidget() {
 
         <div className="flex items-center gap-1.5">
           <select
-            value={stationIdx}
+            value={isIdle ? '' : stationIdx}
             onChange={(e) => goToStation(Number(e.target.value))}
             className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
           >
+            {isIdle && (
+              <option value="" className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                Select
+              </option>
+            )}
             {isCustom && (
               <option value={-1} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
                 {customEmoji} Custom
