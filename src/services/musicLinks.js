@@ -17,8 +17,11 @@ export async function createMusicLink(userId, label, media) {
     .insert({
       user_id: userId,
       label: label || 'Saved',
+      provider: media.provider || 'youtube',
       video_id: media.videoId || null,
       list_id: media.listId || null,
+      spotify_type: media.spotifyType || null,
+      spotify_id: media.spotifyId || null,
     })
     .select()
     .single();

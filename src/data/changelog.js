@@ -1,5 +1,40 @@
 export const RELEASES = [
   {
+    version: '2.2.0',
+    label: 'Spotify, Synced Music & Cleanup',
+    date: 'March 31, 2026',
+    description: 'The Music widget now supports both YouTube and Spotify, saved music can sync with your account, and a handful of UI mismatches and account-setting rough edges have been cleaned up.',
+    sections: [
+      {
+        title: 'Music',
+        color: 'teal',
+        items: [
+          'YouTube / Spotify toggle added to the Music widget - switch providers instantly from the widget header.',
+          'Spotify embeds are now supported - paste track, album, playlist, or episode links directly into the widget.',
+          'Saved music is now provider-aware - YouTube and Spotify links are stored separately inside the widget and sync to your account.',
+          'Spotify saves now try to use the real track, album, or playlist title automatically instead of a generic fallback label.',
+          'Idle state cleanup - the widget now shows a neutral "Select" state instead of pre-highlighting Cozy Spring before anything is playing.',
+        ],
+      },
+      {
+        title: 'Account',
+        color: 'blue',
+        items: [
+          'Delete Account entry removed from the profile UI until a real server-side deletion flow is ready.',
+          'FAQ updated so it no longer advertises account deletion before the backend exists.',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        color: 'gray',
+        items: [
+          'Saved music no longer behaves like a browser-only feature once account sync is available - older local saves can seed into your account.',
+          'Switching music providers now stops the previous player cleanly instead of leaving mismatched widget state behind.',
+        ],
+      },
+    ],
+  },
+  {
     version: '2.1.0',
     label: 'Smarter XP, Daily Fixes & Music',
     date: 'March 22, 2026',

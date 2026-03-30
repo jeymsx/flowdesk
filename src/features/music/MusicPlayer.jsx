@@ -11,20 +11,63 @@ const STATIONS = [
   { id: 'WPni755-Krg', title: 'Alpha Waves', emoji: '🧘' },
 ];
 
-function buildSrc({ videoId, listId }, autoplay) {
+function buildSrc(media, autoplay) {
+  if (media.provider === 'spotify') {
+    return `https://open.spotify.com/embed/${media.spotifyType}/${media.spotifyId}?utm_source=generator`;
+  }
+
   const ap = autoplay ? '&autoplay=1' : '';
   const base = 'rel=0&modestbranding=1&enablejsapi=1';
-  if (videoId && listId) return `https://www.youtube.com/embed/${videoId}?list=${listId}&${base}${ap}`;
-  if (listId) return `https://www.youtube.com/embed/videoseries?list=${listId}&${base}${ap}`;
-  return `https://www.youtube.com/embed/${videoId}?loop=1&playlist=${videoId}&${base}${ap}`;
+  if (media.videoId && media.listId) {
+    return `https://www.youtube.com/embed/${media.videoId}?list=${media.listId}&${base}${ap}`;
+  }
+  if (media.listId) {
+    return `https://www.youtube.com/embed/videoseries?list=${media.listId}&${base}${ap}`;
+  }
+  return `https://www.youtube.com/embed/${media.videoId}?loop=1&playlist=${media.videoId}&${base}${ap}`;
 }
 
-const MINI_W   = 288;
-const MINI_VH  = 162; // video height in mini mode
-const MINI_BAR = 44;  // controls bar height
-const MINI_H   = MINI_VH + MINI_BAR;
-const EASE     = 'cubic-bezier(0.4, 0, 0.2, 1)';
-const DUR      = '0.38s';
+function getMediaKey(media) {
+  if (media.provider === 'spotify') return `spotify:${media.spotifyType}:${media.spotifyId}`;
+  return `youtube:${media.videoId || ''}:${media.listId || ''}`;
+}
+
+function getLabel(media) {
+  if (media.provider === 'spotify') {
+    const base = media.label || (media.spotifyType ? media.spotifyType[0].toUpperCase() + media.spotifyType.slice(1) : 'Spotify');
+    return `🎵 ${base}`;
+  }
+
+  const station = !media.listId ? STATIONS.find((entry) => entry.id === media.videoId) : null;
+  if (station) return `${station.emoji} ${station.title}`;
+  if (media.listId && !media.videoId) return '📋 Playlist';
+  return media.label || '🔗 Custom';
+}
+
+function getMetadata(media) {
+  if (media.provider === 'spotify') {
+    return {
+      title: media.label || 'Spotify',
+      artist: 'FlowDesk Music',
+      artwork: [],
+    };
+  }
+
+  const station = !media.listId ? STATIONS.find((entry) => entry.id === media.videoId) : null;
+  const title = station ? station.title : media.listId ? 'Playlist' : media.label || 'Custom Video';
+  const artwork = media.videoId
+    ? [{ src: `https://i.ytimg.com/vi/${media.videoId}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' }]
+    : [];
+
+  return { title, artist: 'FlowDesk Music', artwork };
+}
+
+const MINI_W = 288;
+const MINI_VH = 162;
+const MINI_BAR = 44;
+const MINI_H = MINI_VH + MINI_BAR;
+const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
+const DUR = '0.38s';
 
 function MiniBtn({ onClick, title, children }) {
   return (
@@ -32,37 +75,33 @@ function MiniBtn({ onClick, title, children }) {
       onClick={onClick}
       title={title}
       style={{
-        background: 'none', border: 'none', cursor: 'pointer', padding: 5,
-        color: 'rgba(255,255,255,0.45)', borderRadius: 6,
-        display: 'flex', alignItems: 'center', transition: 'color 0.15s',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 5,
+        color: 'rgba(255,255,255,0.45)',
+        borderRadius: 6,
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'color 0.15s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
-      onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
+      onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.9)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
     >
       {children}
     </button>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MusicPlayer — globally mounted in App.jsx.
-//
-// Uses a SINGLE fixed container (never unmounted while media is set) that
-// transitions via CSS between two positions:
-//   • Overlay mode  — positioned exactly over the iframeSlot placeholder div
-//                     inside MusicWidget (z-index 10, no controls bar)
-//   • Mini mode     — bottom-right floating card (z-index 9985, controls bar
-//                     slides in beneath the video)
-//
-// Because the outer <div> and inner <iframe> never change their React tree
-// position, React never remounts the iframe → playback is uninterrupted when
-// navigating between the dashboard and other pages.
-// ─────────────────────────────────────────────────────────────────────────────
 export default function MusicPlayer() {
   const { media, autoplay, iframeSlot, clearMedia, nextTrack, prevTrack } = useMusicStore(
     useShallow((s) => ({
-      media: s.media, autoplay: s.autoplay, iframeSlot: s.iframeSlot,
-      clearMedia: s.clearMedia, nextTrack: s.nextTrack, prevTrack: s.prevTrack,
+      media: s.media,
+      autoplay: s.autoplay,
+      iframeSlot: s.iframeSlot,
+      clearMedia: s.clearMedia,
+      nextTrack: s.nextTrack,
+      prevTrack: s.prevTrack,
     }))
   );
   const setMusicActive = useUIStore((s) => s.setMusicActive);
@@ -71,64 +110,70 @@ export default function MusicPlayer() {
   const [ww, setWW] = useState(() => window.innerWidth);
   const [wh, setWH] = useState(() => window.innerHeight);
 
-  // Keep uiStore in sync (used by other consumers)
   useEffect(() => { setMusicActive(!!media); }, [media, setMusicActive]);
 
-  // ── Media Session API ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!('mediaSession' in navigator) || !media) return;
 
-    const station = !media.listId ? STATIONS.find((s) => s.id === media.videoId) : null;
-    const title   = station ? station.title : media.listId ? 'Playlist' : 'Custom Video';
-    const thumb   = media.videoId
-      ? [{ src: `https://i.ytimg.com/vi/${media.videoId}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' }]
-      : [];
+    const metadata = getMetadata(media);
+    navigator.mediaSession.metadata = new MediaMetadata(metadata);
 
-    navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'FlowDesk Music', artwork: thumb });
+    if (media.provider === 'youtube') {
+      const post = (func) =>
+        musicIframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func, args: [] }),
+          '*'
+        );
 
-    const post = (func) =>
-      musicIframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func, args: [] }), '*'
-      );
-
-    navigator.mediaSession.setActionHandler('play',          () => post('playVideo'));
-    navigator.mediaSession.setActionHandler('pause',         () => post('pauseVideo'));
-    navigator.mediaSession.setActionHandler('nexttrack',     nextTrack);
-    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+      navigator.mediaSession.setActionHandler('play', () => post('playVideo'));
+      navigator.mediaSession.setActionHandler('pause', () => post('pauseVideo'));
+      navigator.mediaSession.setActionHandler('nexttrack', media.listId ? nextTrack : null);
+      navigator.mediaSession.setActionHandler('previoustrack', media.listId ? prevTrack : null);
+    } else {
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+    }
 
     return () => {
-      ['play', 'pause', 'nexttrack', 'previoustrack'].forEach((a) =>
-        navigator.mediaSession.setActionHandler(a, null)
+      ['play', 'pause', 'nexttrack', 'previoustrack'].forEach((action) =>
+        navigator.mediaSession.setActionHandler(action, null)
       );
     };
   }, [media, nextTrack, prevTrack]);
 
-  // Track window dimensions for the mini player corner position
   useEffect(() => {
-    const update = () => { setWW(window.innerWidth); setWH(window.innerHeight); };
+    const update = () => {
+      setWW(window.innerWidth);
+      setWH(window.innerHeight);
+    };
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // Track the slot element's bounding rect in real-time.
-  // RAF-throttled so setState fires at most once per animation frame (~60fps),
-  // not on every scroll microtask. This prevents continuous re-render jank.
   useEffect(() => {
-    if (!iframeSlot) { setSlotRect(null); return; }
+    if (!iframeSlot) {
+      setSlotRect(null);
+      return;
+    }
+
     let rafId = null;
     const update = () => {
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const r = iframeSlot.getBoundingClientRect();
-        setSlotRect({ left: r.left, top: r.top, width: r.width, height: r.height });
+        const rect = iframeSlot.getBoundingClientRect();
+        setSlotRect({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
       });
     };
+
     update();
     const ro = new ResizeObserver(update);
     ro.observe(iframeSlot);
     window.addEventListener('scroll', update, { passive: true, capture: true });
     window.addEventListener('resize', update, { passive: true });
+
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       ro.disconnect();
@@ -139,56 +184,54 @@ export default function MusicPlayer() {
 
   if (!media) return null;
 
-  const isOverlay  = !!slotRect;
-  const isPlaylist = !!media.listId;
-  const iframeKey  = media.videoId || media.listId;
+  const isOverlay = !!slotRect;
+  const isPlaylist = media.provider === 'youtube' && !!media.listId;
+  const iframeKey = getMediaKey(media);
+  const label = getLabel(media);
 
-  // Derive display label for mini player
-  const station = !media.listId ? STATIONS.find((s) => s.id === media.videoId) : null;
-  const label = station
-    ? `${station.emoji} ${station.title}`
-    : isPlaylist && !media.videoId ? '📋 Playlist' : '🔗 Custom';
-
-  // Compute positions — always left/top pixels so CSS transition works
-  const cLeft   = isOverlay ? slotRect.left                 : ww - MINI_W   - 24;
-  const cTop    = isOverlay ? slotRect.top                  : wh - MINI_H   - 24;
-  const cWidth  = isOverlay ? slotRect.width                : MINI_W;
-  const cHeight = isOverlay ? slotRect.height               : MINI_H;
-  const videoH  = isOverlay ? (slotRect?.height ?? 0)       : MINI_VH;
-  const barH    = isOverlay ? 0                             : MINI_BAR;
+  const cLeft = isOverlay ? slotRect.left : ww - MINI_W - 24;
+  const cTop = isOverlay ? slotRect.top : wh - MINI_H - 24;
+  const cWidth = isOverlay ? slotRect.width : MINI_W;
+  const cHeight = isOverlay ? slotRect.height : MINI_H;
+  const videoH = isOverlay ? (slotRect?.height ?? 0) : MINI_VH;
+  const barH = isOverlay ? 0 : MINI_BAR;
 
   return (
-    // ── Outer container — slides between overlay and mini corner ──────────────
     <div
       style={{
         position: 'fixed',
-        left: cLeft, top: cTop, width: cWidth, height: cHeight,
+        left: cLeft,
+        top: cTop,
+        width: cWidth,
+        height: cHeight,
         zIndex: isOverlay ? 10 : 9985,
         borderRadius: isOverlay ? '0.75rem' : '1rem',
         overflow: 'hidden',
         boxShadow: isOverlay
           ? 'none'
           : '0 32px 64px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07)',
-        // In overlay mode: no position transitions — the container tracks the slot
-        // in real-time, transitions would make it lag behind on every scroll frame.
-        // In mini mode: full transitions so the slide-out from overlay → corner is smooth.
         transition: isOverlay
           ? 'border-radius 0.25s, box-shadow 0.3s'
           : [
-              `left ${DUR} ${EASE}`, `top ${DUR} ${EASE}`,
-              `width ${DUR} ${EASE}`, `height ${DUR} ${EASE}`,
-              'border-radius 0.25s', 'box-shadow 0.3s',
+              `left ${DUR} ${EASE}`,
+              `top ${DUR} ${EASE}`,
+              `width ${DUR} ${EASE}`,
+              `height ${DUR} ${EASE}`,
+              'border-radius 0.25s',
+              'box-shadow 0.3s',
             ].join(', '),
         pointerEvents: 'auto',
       }}
     >
-      {/* ── Video area ─────────────────────────────────────────────────────── */}
-      <div style={{
-        width: '100%', height: videoH, background: '#000', overflow: 'hidden',
-        transition: isOverlay ? 'none' : `height ${DUR} ${EASE}`,
-      }}>
-        {/* Single iframe — key only changes when the media source changes,
-            never on overlay ↔ mini transitions → playback is never interrupted */}
+      <div
+        style={{
+          width: '100%',
+          height: videoH,
+          background: '#000',
+          overflow: 'hidden',
+          transition: isOverlay ? 'none' : `height ${DUR} ${EASE}`,
+        }}
+      >
         <iframe
           ref={(el) => { musicIframeRef.current = el; }}
           key={iframeKey}
@@ -200,32 +243,46 @@ export default function MusicPlayer() {
         />
       </div>
 
-      {/* ── Controls bar — slides up in mini mode, hidden in overlay ─────── */}
-      <div style={{
-        height: barH, overflow: 'hidden',
-        transition: isOverlay ? 'none' : `height ${DUR} ${EASE}`,
-        background: 'rgba(3, 7, 18, 0.97)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center',
-        padding: '0 12px', gap: 8,
-      }}>
-        {/* Live indicator */}
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-          background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)',
-        }} />
+      <div
+        style={{
+          height: barH,
+          overflow: 'hidden',
+          transition: isOverlay ? 'none' : `height ${DUR} ${EASE}`,
+          background: 'rgba(3, 7, 18, 0.97)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 12px',
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            flexShrink: 0,
+            background: '#22c55e',
+            boxShadow: '0 0 8px rgba(34,197,94,0.5)',
+          }}
+        />
 
-        {/* Label */}
-        <span style={{
-          flex: 1, fontSize: 11, fontWeight: 700, letterSpacing: '0.01em',
-          color: 'rgba(255,255,255,0.9)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
+        <span
+          style={{
+            flex: 1,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+            color: 'rgba(255,255,255,0.9)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {label}
         </span>
 
-        {/* Playlist prev/next */}
         {isPlaylist && (
           <>
             <MiniBtn onClick={prevTrack} title="Previous">
@@ -241,7 +298,6 @@ export default function MusicPlayer() {
           </>
         )}
 
-        {/* Close */}
         <MiniBtn onClick={clearMedia} title="Stop music">
           <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
