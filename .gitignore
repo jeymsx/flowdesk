@@ -3,7 +3,22 @@ dist
 .env
 .env.local
 *.local
+
+# AI assistant context files
 .claude/
 .agents/
 skills-lock.json
 CLAUDE.md
+GEMINI.md
+
+# Build artifacts
+.next
+.output
+.vercel
+
+# Supabase schema — keep local, don't expose publicly
+supabase-schema.sql
+supabase-functions.sql
+
+# Local reference assets
+public/sidebar-icons.svg
