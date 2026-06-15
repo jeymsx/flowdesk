@@ -63,48 +63,6 @@
 
 ---
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js v18+
-- A [Supabase](https://supabase.com) project
-
-### Setup
-
-```bash
-git clone https://github.com/jeymsx/flowdesk.git
-cd flowdesk
-npm install
-```
-
-Copy the environment template and fill in your Supabase credentials:
-
-```bash
-cp .env.example .env
-```
-
-```env
-VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-```
-
-Start the dev server:
-
-```bash
-npm run dev
-```
-
-### Commands
-
-```bash
-npm run dev       # Start Vite dev server (localhost:5173)
-npm run build     # Production build → dist/
-npm run preview   # Preview the production build locally
-```
-
----
-
 ## Project Structure
 
 ```
@@ -139,12 +97,6 @@ src/
 - **Optimistic UI**: Tasks, widget visibility, and layout changes update the store instantly; Supabase confirms asynchronously.
 - **Encryption**: Notes are AES-GCM encrypted client-side before storage — the server never sees plaintext.
 - **XP security**: All XP awards go through a Supabase RPC function — clients cannot self-award.
-
----
-
-## Database
-
-Schema and RLS policies are in `supabase-schema.sql`. Run this against your Supabase project to set up all tables.
 
 ---
 
