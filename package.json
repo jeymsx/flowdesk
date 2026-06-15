@@ -1,7 +1,9 @@
 {
   "name": "flowdesk",
+  "description": "A customizable productivity dashboard with drag-and-drop widgets, gamification, and PWA support.",
+  "version": "2.2.0",
+  "homepage": "https://go-flowdesk.vercel.app",
   "private": true,
-  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
